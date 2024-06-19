@@ -8,6 +8,7 @@ import 'package:heychat_2/widgets/custom_divider_widgets.dart';
 import 'package:heychat_2/widgets/custom_text_widgets.dart';
 import 'package:heychat_2/widgets/custom_textfield_widgets.dart';
 
+import '../../services/auth_service.dart';
 import '../../widgets/custom_cardview_widgets.dart';
 
 final view_model = ChangeNotifierProvider((ref) => LoginPageViewmodel());
@@ -21,8 +22,16 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController email_controller = TextEditingController();
-
   final TextEditingController password_controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AuthService().currentUser(context);
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +68,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   CustomTextfieldWidgets(
                       controller: email_controller,
                       hint_text: Constants.email,
-                      prefix_icon: const Icon(Icons.person),
+                      prefix_icon: const Icon(Icons.email),
                       keyboard_type: TextInputType.emailAddress),
                   const SizedBox(
                     height: 10,
@@ -71,8 +80,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       is_password: true,
                       keyboard_type: TextInputType.text),
                   const SizedBox(height: 10,),
+                   Align(
+                     alignment: Alignment.topRight,
+                     child: TextButton(onPressed: (){
+                      watch.goResetPasswordPage(context);
+                                       }, child: const Text(Constants.reset_password)),
+                   ),
+                  const SizedBox(height: 5,),
                   CustomButtonWidgets(funciton: (){
-
+                      read.login(context,email_controller.text,password_controller.text);
                   }, text: Constants.title_login),
                   const SizedBox(height: 5,),
                   Center(child: CustomTextWidgets(text: Constants.or,font_size: 10, color: Colors.white,)),

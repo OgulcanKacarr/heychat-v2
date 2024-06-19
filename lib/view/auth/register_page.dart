@@ -12,7 +12,6 @@ import '../../widgets/custom_text_widgets.dart';
 import '../../widgets/custom_textfield_widgets.dart';
 
 final view_model = ChangeNotifierProvider((ref) => RegisterPageViewmodel());
-
 class RegisterPage extends ConsumerStatefulWidget {
 
 
@@ -30,6 +29,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       body: _buildBody(context),
     );
@@ -77,7 +77,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   CustomTextfieldWidgets(
                       controller: email_controller,
                       hint_text: Constants.email,
-                      prefix_icon: const Icon(Icons.person),
+                      prefix_icon: const Icon(Icons.email),
                       keyboard_type: TextInputType.emailAddress),
                   const SizedBox(
                     height: 10,
@@ -96,7 +96,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       is_password: true,
                       keyboard_type: TextInputType.text),
                   const SizedBox(height: 10,),
-                  CustomButtonWidgets(funciton: (){
+                  CustomButtonWidgets(funciton: () async {
+
+                    //Kullanıcı oluştur
+                    await read.createUser(
+                        context,
+                        name_and_surname_controller.text,
+                        username_controller.text,
+                        email_controller.text,
+                        password_controller.text,
+                        password_match_controller.text);
+
+
                   }, text: Constants.register),
                   const SizedBox(height: 5,),
                   Center(child: CustomTextWidgets(text: Constants.or,font_size: 10, color: Colors.white,)),
@@ -104,8 +115,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   const CustomDividerWidgets(),
                   const SizedBox(height: 5,),
                   Padding(padding:const EdgeInsets.only(bottom: 5),child: Center(child: TextButton(
-                    onPressed: (){
-                      read.goLoginPage(context);
+                    onPressed: ()  {
+                     watch.goLoginPage(context);
                     },
                     child: const Text(Constants.title_login,style: TextStyle(fontSize: 10, color: Colors.white),),
                   ))),

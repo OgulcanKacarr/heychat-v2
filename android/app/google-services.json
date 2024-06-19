@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252146025977",
+    "project_id": "heychat2-bacc3",
+    "storage_bucket": "heychat2-bacc3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252146025977:android:04e87eb068089015066928",
+        "android_client_info": {
+          "package_name": "com.ogulcankacar.heychat_2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGoEacVqe9gAftBpjXFxXD0rIYufFUOF0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heychat_2/utils/custom_theme.dart';
 import 'package:heychat_2/view/auth/login_page.dart';
+import 'package:heychat_2/view/auth/register_page.dart';
 import 'package:heychat_2/view/home/home_page.dart';
 import 'package:heychat_2/view/splash/splash_page.dart';
 import 'firebase_options.dart';
@@ -31,6 +32,8 @@ class MainApp extends StatelessWidget {
       routes: {
         "splash_page": (context) => SplashPage(),
         "home_page": (context) => HomePage(),
+        "register_page": (context) => RegisterPage(),
+        "login_page": (context) => LoginPage(),
       },
 
       home: SplashPage(),

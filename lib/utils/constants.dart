@@ -4,9 +4,13 @@ class Constants {
   static const double avatarRadius = 50.0;
   static const String email = "Email";
   static const String password = "Parola";
+  static const String password_match = "Parola tekrar";
   static const String title_login = "Giriş yap";
   static const String or = "Ya da";
   static const String register = "Kayıt ol";
+  static const String name_and_surname = "Ad soyad";
+  static const String username = "Kullanıcı adı";
+
 
 
 

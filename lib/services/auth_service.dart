@@ -13,23 +13,23 @@ class AuthService {
   FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
 
   //Kullanıcı oluşturma
-  Future<User?> createWithEmailAndPassword(BuildContext context, String email,
-      String password, String username, String nameAndSurname) async {
+  Future<User?> createWithEmailAndPassword(BuildContext context, String email, String password, String username, String nameAndSurname) async {
     try {
-      User? user;
-      UserCredential result = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password)
-          .whenComplete(() {
-        //Kullanıcı bilgilerini veritabanını ekle
-        UserModel user = UserModel(
-            uid: _auth.currentUser!.uid,
-            email: email,
-            username: username,
-            displayName: nameAndSurname,
-            isOnline: false);
-        _firestoreService.addUserInfoInDatabase(context, user);
-      });
-      user = result.user;
+      UserCredential result = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      User? user = result.user;
+
+      if (user != null) {
+        // Kullanıcı bilgilerini veritabanına ekle
+        UserModel userModel = UserModel(
+          uid: user.uid,
+          email: email,
+          username: username,
+          displayName: nameAndSurname,
+          isOnline: false,
+        );
+        await _firestoreService.addUserInfoInDatabase(context, userModel);
+      }
+
       return user;
     } on FirebaseAuthException catch (error) {
       if (error.code == "email-already-in-use") {
@@ -43,9 +43,12 @@ class AuthService {
       } else {
         SnackbarUtil.showSnackbar(context, Constants.error);
       }
+    } catch (e) {
+      SnackbarUtil.showSnackbar(context, e.toString());
     }
     return null;
   }
+
 
   Future<User?> loginWithEmailAndPassword(BuildContext context, String email,
       String password) async {

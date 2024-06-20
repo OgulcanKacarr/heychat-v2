@@ -22,10 +22,10 @@ class RegisterPageViewmodel extends ChangeNotifier{
   //Kullanıcı oluştur
   Future<void> createUser(
       BuildContext context,
-      String nameAndSurname,
-      String username,
       String email,
       String password,
+      String username,
+      String nameAndSurname,
       String re_password) async {
     ProgressDialog.showProgressDialog(context);
     if (nameAndSurname.isEmpty == true) {
@@ -56,6 +56,7 @@ class RegisterPageViewmodel extends ChangeNotifier{
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.not_match_password);
     } else {
+
       //Kullanıcı oluştur ve bilgileri firestore'a ekle
       _authService.createWithEmailAndPassword(context, email, password, username, nameAndSurname).whenComplete((){
         ProgressDialog.hideProgressDialog(context);

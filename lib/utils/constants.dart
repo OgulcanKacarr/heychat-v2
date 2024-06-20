@@ -31,7 +31,13 @@ class Constants {
   static const String feed = "Akış";
   static const String search = "Ara";
   static const String profile = "Profil";
-
+  static const String update_info = " Bilgileri güncelle";
+  static const String bio = "Bio";
+  static const String bio_is_not_empty = "Bio boş olamaz";
+  static const String update = "Güncelle";
+  static const String update_succes = "Güncelleme başarılı";
+  static const String empty_cover_photo = "Kapak fotoğrafı yok";
+  static const String empty_profile_photo = "Profil fotoğrafı yok";
 
 
 
@@ -40,6 +46,9 @@ class Constants {
 
 
   static const String fb_users = "Users";
+  static const String fb_cover_photo = "coverPhoto";
+  static const String fb_profile_photo = "profilePhoto";
+
 
   static const String logo_path = "assets/images/logo.png";
 }

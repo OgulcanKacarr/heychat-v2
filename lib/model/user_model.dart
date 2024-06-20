@@ -26,8 +26,6 @@ posts: Kullanıcının paylaştığı postların listesi.
   String profileImageUrl;
   String coverImageUrl;
   bool isOnline;
-  List<String>? followers;
-  List<String>? following;
   List<String>? friends;
   List<String>? friendRequests;
   List<String>? posts;
@@ -38,11 +36,9 @@ posts: Kullanıcının paylaştığı postların listesi.
     required this.username,
     required this.displayName,
     this.bio = '',
-    this.isOnline = false,
+    this.isOnline = true,
     this.profileImageUrl = '',
     this.coverImageUrl = '',
-    this.followers = const [],
-    this.following = const [],
     this.friends = const [],
     this.friendRequests = const [],
     this.posts = const [],
@@ -61,8 +57,6 @@ posts: Kullanıcının paylaştığı postların listesi.
       isOnline: data?['isOnline'],
       profileImageUrl: data?['profileImageUrl'],
       coverImageUrl: data?['coverImageUrl'],
-      followers: data?['followers'] is Iterable ? List.from(data?['followers']) : null,
-      following: data?['following'] is Iterable ? List.from(data?['following']) : null,
       friends: data?['friends'] is Iterable ? List.from(data?['friends']) : null,
       friendRequests: data?['friendRequests'] is Iterable ? List.from(data?['friendRequests']) : null,
       posts: data?['posts'] is Iterable ? List.from(data?['posts']) : null,
@@ -71,21 +65,22 @@ posts: Kullanıcının paylaştığı postların listesi.
 
   Map<String, dynamic> toFirestore() {
     return {
-      if (uid != null) "uid": uid,
-      if (email != null) "email": email,
-      if (username != null) "username": username,
-      if (displayName != null) "displayName": displayName,
-      if (bio != null) "bio": bio,
-      if (isOnline != null) "isOnline": bio,
-      if (profileImageUrl != null) "profileImageUrl": profileImageUrl,
-      if (coverImageUrl != null) "coverImageUrl": coverImageUrl,
-      if (followers != null) "followers": followers,
-      if (following != null) "following": following,
-      if (friends != null) "friends": friends,
-      if (friendRequests != null) "friendRequests": friendRequests,
-      if (posts != null) "posts": posts,
+      "uid": uid,
+      "email": email,
+      "username": username,
+      "displayName": displayName,
+      "bio": bio,
+      "isOnline": isOnline,
+      "profileImageUrl": profileImageUrl,
+      "coverImageUrl": coverImageUrl,
+      "friends": friends,
+      "friendRequests": friendRequests,
+      "posts": posts,
     };
   }
 
-
+  @override
+  String toString() {
+    return 'UserModel(displayName: $displayName, email: $email, bio: $bio, username: $username, profileImageUrl: $profileImageUrl, coverImageUrl: $coverImageUrl)';
+  }
 }

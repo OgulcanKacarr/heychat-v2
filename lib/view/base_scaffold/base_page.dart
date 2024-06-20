@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:heychat_2/view/base_scaffold_view/base_scaffold_viewmodel.dart';
+import 'package:heychat_2/view_model/base_scaffold_view/base_scaffold_viewmodel.dart';
 
 import '../../utils/constants.dart';
 
@@ -21,7 +21,7 @@ class _BasePageState extends ConsumerState<BasePage> {
       var read = ref.read(view_model);
 
       return Scaffold(
-        appBar: _buildAppBar(read),
+        appBar: watch.showAppBar ? _buildAppBar(read) : null,
         bottomNavigationBar: _buildNavBar(watch),
         body: watch.buildBody(),
 

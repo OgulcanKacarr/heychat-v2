@@ -10,7 +10,10 @@ import 'package:heychat_2/view/auth/login_page.dart';
 import 'package:heychat_2/view/auth/register_page.dart';
 import 'package:heychat_2/view/chats/chats_page.dart';
 import 'package:heychat_2/view/home/home_page.dart';
+import 'package:heychat_2/view/post/post_page.dart';
+import 'package:heychat_2/view/profile/profile_page.dart';
 import 'package:heychat_2/view/reset_password/reset_password_page.dart';
+import 'package:heychat_2/view/search/search_page.dart';
 import 'package:heychat_2/view/settings/settings_page.dart';
 import 'package:heychat_2/view/splash/splash_page.dart';
 import 'firebase_options.dart';
@@ -42,6 +45,8 @@ class MainApp extends StatelessWidget {
         "reset_password_page": (context) => ResetPasswordPage(),
         "chats_page": (context) => ChatsPage(),
         "settings_page": (context) => SettingsPage(),
+        "profile_page": (context) => ProfilePage(),
+        "post_page": (context) => PostPage(),
       },
 
       home: SplashPage(),

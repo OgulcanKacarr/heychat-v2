@@ -39,12 +39,19 @@ class _BasePageState extends ConsumerState<BasePage> {
           PopupMenuButton<String>(
             onSelected: (String result) {
               switch (result) {
+                case "post":
+                  read.goPostPage(context);
+                  break;
                 case "logout":
                   read.signOut(context);
                   break;
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'post',
+                child: Text(Constants.post),
+              ),
               const PopupMenuItem<String>(
                 value: 'logout',
                 child: Text(Constants.exit),

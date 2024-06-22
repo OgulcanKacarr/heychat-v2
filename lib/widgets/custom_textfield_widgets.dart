@@ -7,12 +7,14 @@ class CustomTextfieldWidgets extends StatefulWidget {
   final Icon prefix_icon;
   final bool is_password;
   final TextInputType keyboard_type;
+  final ValueChanged<String>? onChanged;
 
   CustomTextfieldWidgets({
     required this.controller,
     required this.hint_text,
     required this.prefix_icon,
     this.is_password = false,
+    this.onChanged,
     required this.keyboard_type,
   });
 
@@ -30,6 +32,7 @@ class _CustomTextfieldWidgetsState extends State<CustomTextfieldWidgets> {
       keyboardType: widget.keyboard_type,
       obscureText: _isObscure && widget.is_password,
       cursorColor: Colors.tealAccent,
+      onChanged: widget.onChanged,
       decoration: InputDecoration(
         label: Text(widget.hint_text),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16.0)),

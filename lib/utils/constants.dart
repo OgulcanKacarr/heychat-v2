@@ -38,16 +38,24 @@ class Constants {
   static const String update_succes = "Güncelleme başarılı";
   static const String empty_cover_photo = "Kapak fotoğrafı yok";
   static const String empty_profile_photo = "Profil fotoğrafı yok";
-
-
-
-
+  static const String add_friend = "Arkadaş ekle";
+  static const String sending_friend = "İstek gönderildi";
+  static const String send_friend_failed = "İstek gönderilmedi";
+  static const String accepted_friend = "İstek kabul edildi";
+  static const String accept_friend_failed = "İstek kabul edilmedi";
+  static const String post = "Posts";
+  static const String add_post = "Post ekle";
+  static const String add_post_succes = "Post başarıyla paylaşıldı";
+  static const String select_photo = "Lütfen bir fotoğraf seçin.";
+  static const String add_caption = "Açıklama ekle...";
 
 
 
   static const String fb_users = "Users";
   static const String fb_cover_photo = "coverPhoto";
   static const String fb_profile_photo = "profilePhoto";
+  static const String fb_friendRequests = "friendRequests";
+  static const String fb_post = "Posts";
 
 
   static const String logo_path = "assets/images/logo.png";

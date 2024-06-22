@@ -77,7 +77,6 @@ class SettingsPageViewmodel extends ChangeNotifier{
 
   Future<UserModel?> getUserInfo(BuildContext context) async {
     UserModel? user = await _firestoreService.getUserInfoDatabaseAndStorage(context);
-    print(user.toString());
     notifyListeners();
     return user;
   }

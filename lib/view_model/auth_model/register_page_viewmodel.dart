@@ -22,48 +22,48 @@ class RegisterPageViewmodel extends ChangeNotifier{
   //Kullanıcı oluştur
   Future<void> createUser(
       BuildContext context,
+      String nameAndSurname,
+      String username,
       String email,
       String password,
-      String username,
-      String nameAndSurname,
-      String re_password) async {
+      String re_password
+      ) async {
     ProgressDialog.showProgressDialog(context);
-    if (nameAndSurname.isEmpty == true) {
+
+    // Trim all input fields to remove unnecessary white spaces
+    email = email.trim();
+    password = password.trim();
+    re_password = re_password.trim();
+    username = username.trim();
+    nameAndSurname = nameAndSurname.trim();
+
+    if (nameAndSurname.isEmpty) {
       SnackbarUtil.showSnackbar(context, Constants.name_and_surname_not_empty);
       ProgressDialog.hideProgressDialog(context);
-    } else if (username.isEmpty == true) {
+    } else if (username.isEmpty) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.username_not_empty);
     } else if (username.contains(" ")) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.not_use_space);
-    } else if (email.isEmpty == true) {
+    } else if (email.isEmpty) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.email_is_not_empty);
-    } else if (password.isEmpty == true) {
+    } else if (password.isEmpty) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.password_is_not_empty);
-    } else if (re_password.isEmpty == true) {
+    } else if (re_password.isEmpty) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.re_password_is_not_empty);
-    } else if (email.isEmpty == true &&
-        password.isEmpty == true &&
-        re_password.isEmpty == true) {
-      ProgressDialog.hideProgressDialog(context);
-      SnackbarUtil.showSnackbar(context, Constants.enter_info);
-    } else if (!password.contains(re_password) ||
-        !re_password.contains(password)) {
+    } else if (password != re_password) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.not_match_password);
     } else {
-
       //Kullanıcı oluştur ve bilgileri firestore'a ekle
-      _authService.createWithEmailAndPassword(context, email, password, username, nameAndSurname).whenComplete((){
+      _authService.createWithEmailAndPassword(context, email, password, username, nameAndSurname).whenComplete(() {
         ProgressDialog.hideProgressDialog(context);
         Navigator.pushReplacementNamed(context, "home_page");
-
       });
-
     }
     notifyListeners();
   }

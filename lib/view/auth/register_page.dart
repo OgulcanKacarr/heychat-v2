@@ -107,7 +107,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         password_controller.text,
                         password_match_controller.text);
 
-
                   }, text: Constants.register),
                   const SizedBox(height: 5,),
                   Center(child: CustomTextWidgets(text: Constants.or,font_size: 10, color: Colors.white,)),

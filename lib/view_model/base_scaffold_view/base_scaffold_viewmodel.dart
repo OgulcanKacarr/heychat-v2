@@ -41,6 +41,11 @@ class BaseScaffoldViewmodel extends ChangeNotifier {
     await _authService.signOut(context);
     notifyListeners();
   }
+  //goPostPage
+  Future<void> goPostPage(BuildContext context) async{
+    Navigator.pushNamed(context, "post_page");
+    notifyListeners();
+  }
 
   int _currentIndex = 0;
   bool _showAppBar = true;

@@ -81,11 +81,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               children: [
                 // Cover Photo
                 Positioned(
-                  child: Container(
+                  child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.4,
                     child: cover_image.isEmpty
-                        ? Center(child: const Text(Constants.empty_cover_photo))
+                        ? const Center(child: Text(Constants.empty_cover_photo))
                         : CachedNetworkImage(imageUrl: cover_image),
                   ),
                 ),
@@ -96,7 +96,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     onPressed: () {
                       Navigator.pushNamed(context, "home_page");
                     },
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.arrow_back,
                       color: Colors.tealAccent,
                     ),
@@ -113,48 +113,57 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       onPressed: () async {
                         await watch.selectCoverImageInGallery(context, true);
                       },
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.camera_alt,
                         color: Colors.green,
                       ),
                     ),
                   ),
                 ),
-
                 // Profile Photo
                 Positioned(
                   bottom: 0,
                   left: MediaQuery.of(context).size.width / 2 - 50,
                   child: CircleAvatar(
                     radius: 50,
-                    child: ClipOval(
-                      child: Stack(
-                        children: [
-                          profile_pp.isEmpty
-                              ? const Center(child: Text(Constants.empty_profile_photo))
-                              : CachedNetworkImage(imageUrl: profile_pp),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: CircleAvatar(
-                              backgroundColor: Colors.white,
-                              child: IconButton(
-                                onPressed: () async {
-                                  await watch.selectCoverImageInGallery(
-                                      context, false);
-                                },
-                                icon: Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.pinkAccent,
+                    backgroundImage: profile_pp.isEmpty
+                        ? null// Eğer profile_pp boşsa, varsayılan bir resim göster
+                        : NetworkImage(profile_pp),
+                    // Eğer profile_pp doluysa, profile_pp'deki resmi göster
+                    child: profile_pp.isEmpty
+                        ? Stack(
+                            children: [
+                              profile_pp.isEmpty
+                                  ? const Center(
+                                      child:
+                                          Text(Constants.empty_profile_photo))
+                                  : CachedNetworkImage(imageUrl: profile_pp),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  child: IconButton(
+                                    onPressed: () async {
+                                      await watch.selectCoverImageInGallery(
+                                          context, false);
+                                    },
+                                    icon: Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.pinkAccent,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
+                          ) // Eğer backgroundImage kullanıyorsanız, child kullanmamalısınız. Bu yüzden null olarak bırakın.
+                        : ClipOval(
+                            child: getPhoto(
+                                profile_pp), // Veya getPhoto(profile_pp) kullanarak resmi doldur
                           ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
+
               ],
             ),
           ),
@@ -178,18 +187,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _bioController,
               Constants.bio,
               const Icon(Icons.info_outline),
-                  () => read.updateBio(context, _bioController.text)),
+              () => read.updateBio(context, _bioController.text)),
           // Name and surname
           const SizedBox(
             height: 5,
           ),
           _buildTextFieldWithUpdateButton(
-              context,
-              _nameAndSurnameController,
-              Constants.name_and_surname,
-              const Icon(Icons.person),
-                  () => watch.updateNameAndSurname(
-                  context, _nameAndSurnameController.text),),
+            context,
+            _nameAndSurnameController,
+            Constants.name_and_surname,
+            const Icon(Icons.person),
+            () => watch.updateNameAndSurname(
+                context, _nameAndSurnameController.text),
+          ),
           // Username
           const SizedBox(
             height: 5,
@@ -199,7 +209,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _usernameController,
               Constants.username,
               const Icon(Icons.person),
-                  () => watch.updateUsername(context, _usernameController.text)),
+              () => watch.updateUsername(context, _usernameController.text)),
           // Email
           const SizedBox(
             height: 5,
@@ -209,7 +219,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _emailController,
               Constants.email,
               const Icon(Icons.email),
-                  () => watch.updateEmail(context, _emailController.text)),
+              () => watch.updateEmail(context, _emailController.text)),
           // Password
           const SizedBox(
             height: 5,
@@ -219,7 +229,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               _passwordController,
               Constants.password,
               const Icon(Icons.lock),
-                  () => watch.updatePassword(context, _passwordController.text),
+              () => watch.updatePassword(context, _passwordController.text),
               isPassword: true),
         ],
       ),
@@ -241,7 +251,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             hint_text: hintText,
             prefix_icon: prefixIcon,
             keyboard_type:
-            isPassword ? TextInputType.visiblePassword : TextInputType.text,
+                isPassword ? TextInputType.visiblePassword : TextInputType.text,
             is_password: isPassword,
           ),
         ),
@@ -254,27 +264,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       ],
     );
-    
   }
 
   Widget getPhoto(String image_url) {
     return CachedNetworkImage(
       alignment: Alignment.center,
       imageUrl: image_url,
+      fit: BoxFit.cover,
       progressIndicatorBuilder: (context, url, downloadProgress) {
         if (downloadProgress.totalSize != null) {
-          final percent =
-          (downloadProgress.progress! * 100).toStringAsFixed(0);
+          final percent = (downloadProgress.progress! * 100).toStringAsFixed(0);
           return Center(
             child: Text("$percent% done loading"),
           );
-      
         } else {
           return const CircularProgressIndicator();
         }
       },
-       
     );
-    
   }
 }

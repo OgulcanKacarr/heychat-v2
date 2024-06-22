@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:heychat_2/services/firestore_service.dart';
 
+import '../../model/post_model.dart';
 import '../../model/user_model.dart';
 
 class ProfilePageViewmodel extends ChangeNotifier{
@@ -36,6 +37,30 @@ class ProfilePageViewmodel extends ChangeNotifier{
   }
 
 
+  //postları çek
+  Future<List<PostModel>> getPostsByPostIds(List<String> postIds) async {
+    try {
+      List<PostModel> posts = await _firestoreService.getPostsByPostIds(postIds);
+      return posts;
+    } catch (e) {
+      print("Error getting posts by postIds: $e");
+      return [];
+    }
+  }
+
+  //Arkadaşları çek
+  Future<List<UserModel>> getFriendsByFriendsIds(List<String> friends_ids) async {
+    try {
+      List<UserModel> friends = await _firestoreService.getFriendsByFriendsIds(friends_ids);
+      notifyListeners();
+      return friends;
+    } catch (e) {
+      print("Error getting posts by postIds: $e");
+      return [];
+    }
+  }
+
+
 
 
   Future<String> sendFriendsRequest(BuildContext context, String target_id) async {
@@ -47,11 +72,19 @@ class ProfilePageViewmodel extends ChangeNotifier{
   //arkadaş isteği kabul et
   Future<String> acceptFriendsRequest(String recipientUid) async {
     String status = await _firestoreService.acceptFriendsRequest(recipientUid);
+    notifyListeners();
     return status;
   }
 
   Future<String> cancelFriendsRequest(String recipientUid) async {
     String status = await _firestoreService.cancelFriendsRequest(recipientUid);
+    notifyListeners();
+    return status;
+  }
+
+  Future<String> removeFriends(String recipientUid) async {
+    String status = await _firestoreService.removeFriends(recipientUid);
+    notifyListeners();
     return status;
   }
 

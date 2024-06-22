@@ -7,11 +7,13 @@ class PostModel {
   String caption;
   List<String> likes;
   List<String> comments;
+  Timestamp createdAt; // Yeni eklenen alan
 
   PostModel({
     required this.postId,
     required this.userId,
     required this.imageUrl,
+    required this.createdAt,
     this.caption = '',
     this.likes = const [],
     this.comments = const [],
@@ -26,6 +28,7 @@ class PostModel {
       caption: data['caption'] ?? '',
       likes: List<String>.from(data['likes'] ?? []),
       comments: List<String>.from(data['comments'] ?? []),
+      createdAt: data['createdAt'], // Firestore'dan timestamp olarak alıyoruz
     );
   }
 
@@ -37,6 +40,7 @@ class PostModel {
       'caption': caption,
       'likes': likes,
       'comments': comments,
+      'createdAt': createdAt, // Firestore'a timestamp olarak gönderiyoruz
     };
   }
 }

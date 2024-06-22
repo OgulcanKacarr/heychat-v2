@@ -39,9 +39,10 @@ class Constants {
   static const String empty_cover_photo = "Kapak fotoğrafı yok";
   static const String empty_profile_photo = "Profil fotoğrafı yok";
   static const String add_friend = "Arkadaş ekle";
-  static const String sending_friend = "İstek gönderildi";
+  static const String accept_friend = "Kabul et";
+  static const String cencel_friend = "İptal et";
+  static const String remove_friend = "Çıkar";
   static const String send_friend_failed = "İstek gönderilmedi";
-  static const String accepted_friend = "İstek kabul edildi";
   static const String accept_friend_failed = "İstek kabul edilmedi";
   static const String post = "Posts";
   static const String add_post = "Post ekle";

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:heychat_2/model/post_model.dart';
 import 'package:heychat_2/model/user_model.dart';
 import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/view_model/settings/settings_page_viewmodel.dart';
@@ -28,10 +29,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   late Future<UserModel?> _futureUser;
 
+
   @override
   void initState() {
     super.initState();
     _futureUser = _getUserInfo();
+
+
   }
 
   @override
@@ -68,6 +72,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     UserModel? user = await ref.read(view_model).getUserInfo(context);
     return user;
   }
+
 
   Widget _buildBody(BuildContext context, SettingsPageViewmodel watch,
       SettingsPageViewmodel read) {
@@ -266,10 +271,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget getPhoto(String image_url) {
+  Widget getPhoto(String imageUrl) {
     return CachedNetworkImage(
       alignment: Alignment.center,
-      imageUrl: image_url,
+      imageUrl: imageUrl,
       fit: BoxFit.cover,
       progressIndicatorBuilder: (context, url, downloadProgress) {
         if (downloadProgress.totalSize != null) {

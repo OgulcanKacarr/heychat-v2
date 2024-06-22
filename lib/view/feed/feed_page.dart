@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/widgets/custom_cardview_widgets.dart';
 import 'package:heychat_2/widgets/custom_text_widgets.dart';
 
@@ -18,6 +20,7 @@ class FeedPage extends ConsumerStatefulWidget {
 class _FeedPageState extends ConsumerState<FeedPage> {
   final FirestoreService _firestoreService = FirestoreService();
   late Future<List<PostWithUser>> _postsWithUsers;
+  FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -26,14 +29,32 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   }
 
   Future<List<PostWithUser>> _fetchPostsWithUsers() async {
-    List<PostModel> posts = await _firestoreService.getPosts();
-    List<PostWithUser> postsWithUsers = [];
+    try {
 
-    for (PostModel post in posts) {
-      UserModel user = await _firestoreService.getUserById(post.userId);
-      postsWithUsers.add(PostWithUser(post: post, user: user));
+
+      // Kendi postlarınızı alın
+      List<String> myPostIds = await _firestoreService.getMyPostIds(_auth.currentUser!.uid);
+      List<PostModel> myPosts = await _firestoreService.getPostsByPostIds(myPostIds);
+
+      // Arkadaşlarınızın postlarını almak için arkadaş listesini kullanın
+      List<String> friendsIds = await _firestoreService.getFriendIds(_auth.currentUser!.uid);
+      List<PostModel> friendsPosts = await _firestoreService.getFriendsPosts(friendsIds);
+
+      // Kendi postlarınızı ve arkadaşlarınızın postlarını birleştirin
+      List<PostModel> allPosts = [...myPosts, ...friendsPosts];
+
+      // Her bir post için ilgili kullanıcı bilgisini alın
+      List<PostWithUser> postsWithUsers = [];
+      for (PostModel post in allPosts) {
+        UserModel user = await _firestoreService.getUserById(post.userId);
+        postsWithUsers.add(PostWithUser(post: post, user: user));
+      }
+
+      return postsWithUsers;
+    } catch (e) {
+      print("Error fetching posts with users: $e");
+      return [];
     }
-    return postsWithUsers;
   }
 
   @override
@@ -46,7 +67,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(child: Text('No posts available.'));
+          return Center(child: Text('Henüz paylaşım yok..'));
         }
 
         List<PostWithUser> postsWithUsers = snapshot.data!;
@@ -76,7 +97,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                   radius: 30,
                   backgroundImage: user.profileImageUrl.isNotEmpty
                       ? NetworkImage(user.profileImageUrl)
-                      : AssetImage('assets/default_profile.png') as ImageProvider, // Varsayılan resim
+                      : AssetImage(Constants.logo_path) as ImageProvider, // Varsayılan resim
                 ),
                 const SizedBox(width: 5),
                 CustomTextWidgets(

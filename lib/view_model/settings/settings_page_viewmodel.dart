@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:heychat_2/model/post_model.dart';
 import 'package:heychat_2/model/user_model.dart';
 import 'package:heychat_2/services/firestore_service.dart';
 import 'package:heychat_2/services/storage_service.dart';
@@ -182,6 +183,9 @@ class SettingsPageViewmodel extends ChangeNotifier{
       return null;
     }
   }
+
+
+
 
 
   }

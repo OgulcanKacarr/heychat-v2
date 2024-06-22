@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:heychat_2/model/post_model.dart';
 import 'package:heychat_2/view_model/profil/profile_page_viewmodel.dart';
 import 'package:heychat_2/widgets/custom_button_widgets.dart';
 import 'package:heychat_2/widgets/custom_divider_widgets.dart';
@@ -17,6 +19,7 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
+  FirebaseAuth _auth = FirebaseAuth.instance;
   late Future<UserModel?> _futureUser;
   String profile_pp = "";
   String cover_image = "";
@@ -31,6 +34,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   List<String>? friends = [];
   List<String>? sent_requests = [];
   List<String>? get_requests = [];
+  List<String>? posts = [];
+
+  List<PostModel>? posts_model = [];
+  List<UserModel>? friends_model = [];
 
   bool isFriendRequestSent = false;
   bool isFriendRequestReceived = false;
@@ -45,70 +52,174 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _handleFriendRequest(
       var watch, BuildContext context, String target_id) async {
+
     if (!isFriendRequestSent && !isFriendRequestReceived) {
-      await watch.sendFriendsRequest(context, target_id);
+      friend_button_status = await watch.sendFriendsRequest(context, target_id);
     } else if (isFriendRequestReceived) {
-      await watch.acceptFriendsRequest(target_id);
+      friend_button_status =  await watch.acceptFriendsRequest(target_id);
     } else if (isFriendRequestSent) {
-      await watch.cancelFriendsRequest(context, target_id);
+      friend_button_status =  await watch.cancelFriendsRequest(target_id);
+    } else if(isFriend){
+      friend_button_status =  await watch.removeFriends(userId!);
     }
+
+    // FutureBuilder içindeki _futureUser'ı yenilemek için setState kullanımı
     setState(() {
-      _futureUser =
-          _getUserInfo(); // Arkadaşlık isteği işleminden sonra kullanıcı verilerini yenile
+      _futureUser = _getUserInfo();
     });
   }
 
+
+
+
+
   Future<UserModel?> _getUserInfo() async {
     UserModel? user;
+
     if (userId != null && userId!.isNotEmpty) {
       showSettingsButton = false;
       user = await ref.read(view_model).getUserInfoFromSearch(context, userId!);
+      posts = user?.posts; // Kullanıcının postlarını alma
+      friends = user?.friends;
+
+      if (friends != null) {
+        friends_model = await ref.read(view_model).getFriendsByFriendsIds(user?.friends ?? []);
+      }
+      if (posts != null) {
+        posts_model = await ref.read(view_model).getPostsByPostIds(posts!);
+      }
+
+      if (user != null) {
+        sent_requests = user.sentFriendRequests;
+        get_requests = user.receivedFriendRequests;
+        isFriendRequestSent = sent_requests?.contains(_auth.currentUser!.uid) ?? false;
+        isFriendRequestReceived = get_requests?.contains(userId) ?? false;
+        isFriend = friends?.contains(userId) ?? false;
+
+
+        if (isFriendRequestReceived) {
+          //Kullanıcıya arkadaşlık isteği gönderilmiş mi?
+          // Eğer gönderilmişse ve hedef kullanıcı bu isteği kabul etmemişse
+          friend_button_status = Constants.add_friend;
+        }else if (isFriendRequestSent) {
+          //Kullanıcı tarafından hedef kullanıcıya bir arkadaşlık isteği gönderilmiş mi?
+          // Eğer gönderilmişse ve hedef kullanıcı bu isteği henüz kabul etmemişse
+          friend_button_status = Constants.cencel_friend;
+        } else if (isFriend) {
+          //Kullanıcı ve hedef kullanıcı zaten arkadaş mı? Eğer arkadaşlarsa,
+          // yani kullanıcının arkadaş listesinde hedef kullanıcı varsa, buton metni "Arkadaşsınız" olarak ayarlanır.
+          friend_button_status = Constants.remove_friend;
+        }
+
+      }
+
+
     } else {
       user = await ref.read(view_model).getUserInfo(context);
+      posts = user?.posts; // Kullanıcının postlarını alma
+      friends = user?.friends;
+
+      if (posts != null) {
+        posts_model = await ref.read(view_model).getPostsByPostIds(posts!);
+      }
+      if (friends != null) {
+        friends_model = await ref.read(view_model).getFriendsByFriendsIds(user?.friends ?? []);
+      }
+
     }
-    if (user != null) {
-      friends = user.friends;
-      sent_requests = user.sentFriendRequests;
-      get_requests = user.receivedFriendRequests;
-      isFriendRequestSent = sent_requests?.contains(userId) ?? false;
-      isFriendRequestReceived = get_requests?.contains(userId) ?? false;
-      isFriend = friends?.contains(userId) ?? false;
-    }
+
+
+
     return user;
   }
 
   static List<Widget> widgetOptions(
-          BuildContext context, ProfilePageViewmodel watch) =>
+      BuildContext context,
+      ProfilePageViewmodel watch,
+      List<PostModel>? posts_model,
+      List<UserModel>? friends_model, // Alınan veri tipini eşleştirmek için List<UserModel> olarak değiştirildi
+      Widget Function(String) getPhoto,
+      ) =>
       <Widget>[
+        // Gönderiler için ızgara görünümü
         GridView.builder(
           padding: const EdgeInsets.all(8.0),
-          itemCount: 20, // Gönderi sayısı
+          itemCount: posts_model?.length ?? 0, // Gönderi sayısı
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // Sütun sayısı
+            crossAxisCount: 2, // 3 sütunlu bir ızgara
             crossAxisSpacing: 8.0,
             mainAxisSpacing: 8.0,
           ),
           itemBuilder: (context, index) {
+            // Her bir gönderiyi oluşturun
+            PostModel post = posts_model![index];
+
             return Container(
-              color: Colors.grey[300],
-              child: Center(child: Text('Gönderi $index')),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        getPhoto(post.imageUrl), // getPhoto işlevinin bir Widget döndürdüğünü varsayalım
+                        IconButton(
+                          onPressed: () {
+                            // Silme işlemi burada gerçekleştirilebilir
+                            print('Post silindi');
+                          },
+                          icon: Icon(Icons.delete, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        post.caption,
+                        style: TextStyle(color: Colors.white),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           },
         ),
+
+        // Arkadaş listesi
         ListView.builder(
           padding: const EdgeInsets.all(8.0),
-          itemCount: 20, // Arkadaş sayısı
+          itemCount: friends_model?.length ?? 0, // Arkadaş sayısı
           itemBuilder: (context, index) {
+            UserModel user = friends_model![index]; // UserModel olarak dönüştürme
+
             return ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.blue,
-                child: Text('A$index'),
+                radius: 30,
+                backgroundImage: user.profileImageUrl != null
+                    ? NetworkImage(user.profileImageUrl) // Eğer profil resmi varsa NetworkImage kullan
+                    : AssetImage(Constants.logo_path), // Yoksa AssetImage kullan
               ),
-              title: Text('Arkadaş $index'),
+              title: Text(user.displayName ?? ""), // Display adını göster
+              subtitle: Text(user.bio ?? ""), // Bio bilgisini göster
+              onTap: () {
+                // Arkadaşa tıklanınca yapılacak işlemler
+                // Örneğin arkadaşın profiline gitmek için navigasyon vb.
+              },
             );
           },
         ),
       ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -122,6 +233,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
+            print("Hata: ${snapshot.error}");
             return Center(child: Text('Hata: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data == null) {
             return const Center(child: Text('Kullanıcı verisi bulunamadı.'));
@@ -137,11 +249,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             friends = user.friends;
             sent_requests = user.sentFriendRequests;
             get_requests = user.receivedFriendRequests;
+            posts = user.posts;
 
-            isFriendRequestSent = user.sentFriendRequests!.contains(userId);
-            isFriendRequestReceived =
-                user.receivedFriendRequests!.contains(userId);
-            isFriend = user.friends!.contains(userId);
+            isFriendRequestSent = user.sentFriendRequests!.contains(_auth.currentUser!.uid);
+            isFriendRequestReceived = user.receivedFriendRequests!.contains(_auth.currentUser!.uid);
+            isFriend = user.friends!.contains(_auth.currentUser!.uid);
 
             return _buildBody(context, watch, read);
           }
@@ -181,12 +293,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundImage: profile_pp.isEmpty
-                        ? const AssetImage(Constants.logo_path)  // Eğer profile_pp boşsa, varsayılan bir resim göster
-                        : NetworkImage(profile_pp),  // Eğer profile_pp doluysa, profile_pp'deki resmi göster
+                        ? const AssetImage(Constants
+                        .logo_path) // Eğer profile_pp boşsa, varsayılan bir resim göster
+                        : NetworkImage(profile_pp),
+                    // Eğer profile_pp doluysa, profile_pp'deki resmi göster
                     child: profile_pp.isEmpty
-                        ? null  // Eğer backgroundImage kullanıyorsanız, child kullanmamalısınız. Bu yüzden null olarak bırakın.
+                        ? null // Eğer backgroundImage kullanıyorsanız, child kullanmamalısınız. Bu yüzden null olarak bırakın.
                         : ClipOval(
-                      child: getPhoto(profile_pp),  // Veya getPhoto(profile_pp) kullanarak resmi doldur
+                      child: getPhoto(
+                          profile_pp), // Veya getPhoto(profile_pp) kullanarak resmi doldur
                     ),
                   ),
                 ),
@@ -237,7 +352,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         height: 15,
                         child: CircleAvatar(
                           backgroundColor:
-                              isOnline ? Colors.green : Colors.grey,
+                          isOnline ? Colors.green : Colors.grey,
                         ),
                       ),
                     ),
@@ -261,56 +376,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                 // Arkadaşlık Durumuna Göre Butonu Oluşturma
                 if (!showSettingsButton)
-                  if (!isFriend)
+                  if(!isFriend)
                     ElevatedButton(
                       onPressed: () async {
                         await _handleFriendRequest(watch, context, userId!);
+                        //friend_button_status = await watch.sendFriendsRequest(context, userId!);
                       },
-                      child: Text(
-                        isFriendRequestReceived
-                            ? 'Kabul Et'
-                            : isFriendRequestSent
-                            ? 'İstek İptal'
-                            : 'İstek Gönder',
-                      ),
+                      child: Text(friend_button_status),
                     ),
+
 
                 if (isFriend)
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       // Arkadaşlıktan çıkar işlemi yapılabilir
                       // Örnek olarak:
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title:
-                                Text("Arkadaşlıktan Çıkmak İstiyor musunuz?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () async {
-                                  // Arkadaşlıktan çıkarma işlemi yapılabilir
-                                  // Örneğin:
-                                  await watch.cancelFriendsRequest(userId!);
-                                  setState(() {
-                                    _futureUser = _getUserInfo();
-                                  });
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text("Evet"),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text("Hayır"),
-                              ),
-                            ],
-                          );
-                        },
-                      );
+                      await watch.removeFriends(userId!);
+                      setState(() {
+                        _futureUser = _getUserInfo();
+                      });
                     },
-                    child: Text('Arkadaşsınız'),
+                    child: Text('Arkadaşlıktan çıkar'),
                   ),
 
                 SizedBox(height: 15),
@@ -339,7 +425,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 // Seçilen sekme içeriğini gösterme
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.4,
-                  child: widgetOptions(context, watch)
+                  child: widgetOptions(context, watch, posts_model, friends_model, getPhoto)
                       .elementAt(watch.selectedIndex),
                 ),
               ],

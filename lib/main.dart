@@ -9,6 +9,7 @@ import 'package:heychat_2/utils/custom_theme.dart';
 import 'package:heychat_2/view/auth/login_page.dart';
 import 'package:heychat_2/view/auth/register_page.dart';
 import 'package:heychat_2/view/chats/chats_page.dart';
+import 'package:heychat_2/view/chats/send_and_get_messages_page.dart';
 import 'package:heychat_2/view/home/home_page.dart';
 import 'package:heychat_2/view/post/post_page.dart';
 import 'package:heychat_2/view/profile/profile_page.dart';
@@ -47,6 +48,7 @@ class MainApp extends StatelessWidget {
         "settings_page": (context) => SettingsPage(),
         "profile_page": (context) => ProfilePage(),
         "post_page": (context) => PostPage(),
+        "send_message_page": (context) => SendAndGetMessagesPage(),
       },
 
       home: SplashPage(),

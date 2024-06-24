@@ -49,6 +49,8 @@ class Constants {
   static const String add_post_succes = "Post başarıyla paylaşıldı";
   static const String select_photo = "Lütfen bir fotoğraf seçin.";
   static const String add_caption = "Açıklama ekle...";
+  static const String send_message = "Mesaj gönder";
+  static const String enter_message = "Mesajınızı girin..";
 
 
 
@@ -57,6 +59,8 @@ class Constants {
   static const String fb_profile_photo = "profilePhoto";
   static const String fb_friendRequests = "friendRequests";
   static const String fb_post = "Posts";
+  static const String fb_messages = "Messages";
+  static const String fb_chats = "Chats";
 
 
   static const String logo_path = "assets/images/logo.png";

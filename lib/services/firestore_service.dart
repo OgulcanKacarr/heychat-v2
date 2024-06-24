@@ -4,17 +4,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:heychat_2/model/message_model.dart';
 import 'package:heychat_2/model/post_model.dart';
 import 'package:heychat_2/model/user_model.dart';
 import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/utils/snackbar_util.dart';
+import 'package:rxdart/rxdart.dart';
+
+import '../model/chat_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> addUserInfoInDatabase(
-      BuildContext context, UserModel user) async {
+  Future<void> addUserInfoInDatabase(BuildContext context,
+      UserModel user) async {
     try {
       await _firebaseFirestore
           .collection(Constants.fb_users)
@@ -51,8 +55,8 @@ class FirestoreService {
   }
 
   //Aranan kullanıcı bilgilerini getir
-  Future<UserModel?> getUserInfoSearchedUser(
-      BuildContext context, String user_id) async {
+  Future<UserModel?> getUserInfoSearchedUser(BuildContext context,
+      String user_id) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
           .collection(Constants.fb_users)
@@ -73,8 +77,8 @@ class FirestoreService {
   }
 
   //Kullanıcı ara
-  Future<UserModel?> searchUserWithUsername(
-      BuildContext context, String username) async {
+  Future<UserModel?> searchUserWithUsername(BuildContext context,
+      String username) async {
     try {
       QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
           .collection(Constants.fb_users)
@@ -96,8 +100,8 @@ class FirestoreService {
   }
 
   //Post ekle
-  Future<void> addPostInfoInFb(
-      BuildContext context, String image_url, String caption) async {
+  Future<void> addPostInfoInFb(BuildContext context, String image_url,
+      String caption) async {
     String userId = _auth.currentUser!.uid;
     String postId = FirebaseFirestore.instance
         .collection(Constants.fb_post)
@@ -108,7 +112,13 @@ class FirestoreService {
 
 
     PostModel post =
-        PostModel(postId: postId, userId: userId, imageUrl: image_url,likes: likes,comments: comments,caption: caption,createdAt: Timestamp.fromDate(DateTime.now()));
+    PostModel(postId: postId,
+        userId: userId,
+        imageUrl: image_url,
+        likes: likes,
+        comments: comments,
+        caption: caption,
+        createdAt: Timestamp.fromDate(DateTime.now()));
 
     //Postları fb ekle
     _firebaseFirestore
@@ -151,8 +161,9 @@ class FirestoreService {
 
 
   Future<UserModel> getUserById(String userId) async {
-    DocumentSnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore.collection(Constants.fb_users).doc(userId).get();
-    return UserModel.fromFirestore(snapshot,null);
+    DocumentSnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
+        .collection(Constants.fb_users).doc(userId).get();
+    return UserModel.fromFirestore(snapshot, null);
   }
 
 
@@ -193,17 +204,13 @@ class FirestoreService {
   }
 
 
-
-
-
-
-
   //postları profil için çek
   Future<List<PostModel>> getPostsByPostIds(List<String> postIds) async {
     try {
       List<PostModel> posts = [];
       for (String postId in postIds) {
-        DocumentSnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
+        DocumentSnapshot<
+            Map<String, dynamic>> snapshot = await _firebaseFirestore
             .collection(Constants.fb_post)
             .doc(postId)
             .get();
@@ -220,19 +227,19 @@ class FirestoreService {
   }
 
 
-
-
   //arkadaşları çek
-  Future<List<UserModel>> getFriendsByFriendsIds(List<String> friendsIds) async {
+  Future<List<UserModel>> getFriendsByFriendsIds(
+      List<String> friendsIds) async {
     try {
       List<UserModel> friends = [];
       for (String friendId in friendsIds) {
-        DocumentSnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
+        DocumentSnapshot<
+            Map<String, dynamic>> snapshot = await _firebaseFirestore
             .collection(Constants.fb_users)
             .doc(friendId)
             .get();
         if (snapshot.exists) {
-          UserModel user = UserModel.fromFirestore(snapshot,null);
+          UserModel user = UserModel.fromFirestore(snapshot, null);
           friends.add(user);
         }
       }
@@ -244,8 +251,8 @@ class FirestoreService {
   }
 
   //Arkadaş isteği gönder
-  Future<String> sendFriendsRequest(
-      BuildContext context, String recipientUid) async {
+  Future<String> sendFriendsRequest(BuildContext context,
+      String recipientUid) async {
     String currentUserUid = _auth.currentUser?.uid ?? '';
     String button_status = "";
     try {
@@ -356,5 +363,93 @@ class FirestoreService {
     }
     return Constants.send_friend_failed;
   }
+
+
+
+
+
+
+
+
+
+  Future<void> sendMessage({
+    required String senderId,
+    required String receiverId,
+    required String content,
+  }) async {
+    try {
+      // Chat ID oluşturmak için katılımcıların UID'lerini sıralı bir şekilde birleştiriyoruz.
+      List<String> userIds = [senderId, receiverId];
+      userIds.sort(); // UID'leri sıralıyoruz ki chatId her iki kullanıcı için aynı olsun.
+
+      String chatId = userIds.join('_'); // Örneğin: 'uid1_uid2'
+
+      // Gönderilecek mesajın zaman damgasını alıyoruz.
+      DateTime date = DateTime.now();
+      var timestamp = Timestamp.fromDate(date);
+
+      // Mesajı Firestore'a ekliyoruz.
+      await FirebaseFirestore.instance.collection(Constants.fb_messages).add({
+        'chatId': chatId,
+        'senderId': senderId,
+        'receiverId': receiverId,
+        'content': content,
+        'timestamp': timestamp,
+      });
+
+      // Son mesajı güncellemek için gerekli verileri hazırlıyoruz.
+      String lastMessage = content;
+      Timestamp lastMessageTimestamp = Timestamp.fromDate(date);
+
+      // Chat belgesini kontrol ediyoruz.
+      final chatDoc = await FirebaseFirestore.instance.collection(Constants.fb_chats).doc(chatId).get();
+
+      // Eğer chat belgesi yoksa, yeni bir chat oluşturuyoruz.
+      if (!chatDoc.exists) {
+        await FirebaseFirestore.instance.collection(Constants.fb_chats).doc(chatId).set({
+          'userIds': userIds,
+          'lastMessage': lastMessage,
+          'lastMessageTimestamp': lastMessageTimestamp,
+        });
+      } else {
+        // Eğer chat belgesi varsa, son mesajı ve zaman damgasını güncelliyoruz.
+        await FirebaseFirestore.instance.collection(Constants.fb_chats).doc(chatId).update({
+          'lastMessage': lastMessage,
+          'lastMessageTimestamp': lastMessageTimestamp,
+        });
+      }
+    } catch (e) {
+      print('Hata oluştu: $e');
+      // Hata durumunda uygun şekilde işleme alınabilir.
+    }
+  }
+
+
+
+  Stream<List<Message>> getMessages(
+      String senderId,
+      String receiverId,
+      ) {
+    List<String> userIds = [senderId, receiverId];
+    userIds.sort(); // UID'leri sıralıyoruz ki chatId her iki kullanıcı için aynı olsun.
+    String chatId = userIds.join('_'); // Örneğin: 'uid1_uid2'
+    try {
+      // Belirli bir chatId'ye ait mesajları Firestore'dan çekmek için bir stream döndürüyoruz.
+      return FirebaseFirestore.instance
+          .collection(Constants.fb_messages)
+          .where('chatId', isEqualTo: chatId)
+          .orderBy('timestamp', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => Message.fromFirestore(doc)).toList());
+    } catch (e) {
+      print('Hata oluştu: $e');
+
+      throw e;
+    }
+
+  }
+
+
+
 
 }

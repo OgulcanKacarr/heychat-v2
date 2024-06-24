@@ -14,6 +14,8 @@ import '../../utils/constants.dart';
 final view_model = ChangeNotifierProvider((ref) => ProfilePageViewmodel());
 
 class ProfilePage extends ConsumerStatefulWidget {
+
+
   @override
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
@@ -376,14 +378,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                 // Arkadaşlık Durumuna Göre Butonu Oluşturma
                 if (!showSettingsButton)
-                  if(!isFriend)
-                    ElevatedButton(
-                      onPressed: () async {
-                        await _handleFriendRequest(watch, context, userId!);
-                        //friend_button_status = await watch.sendFriendsRequest(context, userId!);
-                      },
-                      child: Text(friend_button_status),
-                    ),
+                  CustomButtonWidgets(funciton: (){
+                    Navigator.pushNamed(context, "send_message_page",arguments: userId);
+                  }, text: Constants.send_message),
+
+
+                if(!isFriend)
+                  ElevatedButton(
+                    onPressed: () async {
+                      await _handleFriendRequest(watch, context, userId!);
+                      //friend_button_status = await watch.sendFriendsRequest(context, userId!);
+                    },
+                    child: Text(friend_button_status),
+                  ),
 
 
                 if (isFriend)
@@ -454,3 +461,4 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 }
+

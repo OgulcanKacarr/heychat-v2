@@ -1,23 +1,29 @@
-class MessageModel {
-  /*
-messageId: Mesajın benzersiz kimlik numarası.
-senderId: Mesajı gönderen kullanıcının UID'si.
-receiverId: Mesajı alan kullanıcının UID'si.
-content: Mesaj içeriği.
-timestamp: Mesajın gönderilme zamanı
- */
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-  String messageId;
-  String senderId;
-  String receiverId;
-  String content;
-  DateTime timestamp;
+class Message {
+  final String id;
+  final String senderId;
+  final String receiverId;
+  final String content;
+  final DateTime timestamp;
+  DateTime now = DateTime.now();
 
-  MessageModel({
-    required this.messageId,
+  Message({
+    required this.id,
     required this.senderId,
     required this.receiverId,
     required this.content,
     required this.timestamp,
   });
+
+  factory Message.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Message(
+      id: doc.id,
+      senderId: data['senderId'],
+      receiverId: data['receiverId'],
+      content: data['content'],
+      timestamp: (data['timestamp'] as Timestamp).toDate(),
+    );
+  }
 }

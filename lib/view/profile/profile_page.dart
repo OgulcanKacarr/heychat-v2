@@ -14,8 +14,6 @@ import '../../utils/constants.dart';
 final view_model = ChangeNotifierProvider((ref) => ProfilePageViewmodel());
 
 class ProfilePage extends ConsumerStatefulWidget {
-
-
   @override
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
@@ -54,15 +52,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _handleFriendRequest(
       var watch, BuildContext context, String target_id) async {
-
     if (!isFriendRequestSent && !isFriendRequestReceived) {
       friend_button_status = await watch.sendFriendsRequest(context, target_id);
     } else if (isFriendRequestReceived) {
-      friend_button_status =  await watch.acceptFriendsRequest(target_id);
+      friend_button_status = await watch.acceptFriendsRequest(target_id);
     } else if (isFriendRequestSent) {
-      friend_button_status =  await watch.cancelFriendsRequest(target_id);
-    } else if(isFriend){
-      friend_button_status =  await watch.removeFriends(userId!);
+      friend_button_status = await watch.cancelFriendsRequest(target_id);
+    } else if (isFriend) {
+      friend_button_status = await watch.removeFriends(userId!);
     }
 
     // FutureBuilder içindeki _futureUser'ı yenilemek için setState kullanımı
@@ -70,10 +67,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _futureUser = _getUserInfo();
     });
   }
-
-
-
-
 
   Future<UserModel?> _getUserInfo() async {
     UserModel? user;
@@ -85,7 +78,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       friends = user?.friends;
 
       if (friends != null) {
-        friends_model = await ref.read(view_model).getFriendsByFriendsIds(user?.friends ?? []);
+        friends_model = await ref
+            .read(view_model)
+            .getFriendsByFriendsIds(user?.friends ?? []);
       }
       if (posts != null) {
         posts_model = await ref.read(view_model).getPostsByPostIds(posts!);
@@ -94,16 +89,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (user != null) {
         sent_requests = user.sentFriendRequests;
         get_requests = user.receivedFriendRequests;
-        isFriendRequestSent = sent_requests?.contains(_auth.currentUser!.uid) ?? false;
+        isFriendRequestSent =
+            sent_requests?.contains(_auth.currentUser!.uid) ?? false;
         isFriendRequestReceived = get_requests?.contains(userId) ?? false;
         isFriend = friends?.contains(userId) ?? false;
-
 
         if (isFriendRequestReceived) {
           //Kullanıcıya arkadaşlık isteği gönderilmiş mi?
           // Eğer gönderilmişse ve hedef kullanıcı bu isteği kabul etmemişse
           friend_button_status = Constants.add_friend;
-        }else if (isFriendRequestSent) {
+        } else if (isFriendRequestSent) {
           //Kullanıcı tarafından hedef kullanıcıya bir arkadaşlık isteği gönderilmiş mi?
           // Eğer gönderilmişse ve hedef kullanıcı bu isteği henüz kabul etmemişse
           friend_button_status = Constants.cencel_friend;
@@ -112,10 +107,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // yani kullanıcının arkadaş listesinde hedef kullanıcı varsa, buton metni "Arkadaşsınız" olarak ayarlanır.
           friend_button_status = Constants.remove_friend;
         }
-
       }
-
-
     } else {
       user = await ref.read(view_model).getUserInfo(context);
       posts = user?.posts; // Kullanıcının postlarını alma
@@ -125,23 +117,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         posts_model = await ref.read(view_model).getPostsByPostIds(posts!);
       }
       if (friends != null) {
-        friends_model = await ref.read(view_model).getFriendsByFriendsIds(user?.friends ?? []);
+        friends_model = await ref
+            .read(view_model)
+            .getFriendsByFriendsIds(user?.friends ?? []);
       }
-
     }
-
-
 
     return user;
   }
 
   static List<Widget> widgetOptions(
-      BuildContext context,
-      ProfilePageViewmodel watch,
-      List<PostModel>? posts_model,
-      List<UserModel>? friends_model, // Alınan veri tipini eşleştirmek için List<UserModel> olarak değiştirildi
-      Widget Function(String) getPhoto,
-      ) =>
+    BuildContext context,
+    ProfilePageViewmodel watch,
+    List<PostModel>? posts_model,
+    List<UserModel>? friends_model,
+    // Alınan veri tipini eşleştirmek için List<UserModel> olarak değiştirildi
+    Widget Function(String) getPhoto,
+  ) =>
       <Widget>[
         // Gönderiler için ızgara görünümü
         GridView.builder(
@@ -170,7 +162,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     Stack(
                       alignment: Alignment.topRight,
                       children: [
-                        getPhoto(post.imageUrl), // getPhoto işlevinin bir Widget döndürdüğünü varsayalım
+                        getPhoto(post.imageUrl),
+                        // getPhoto işlevinin bir Widget döndürdüğünü varsayalım
                         IconButton(
                           onPressed: () {
                             // Silme işlemi burada gerçekleştirilebilir
@@ -202,14 +195,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           padding: const EdgeInsets.all(8.0),
           itemCount: friends_model?.length ?? 0, // Arkadaş sayısı
           itemBuilder: (context, index) {
-            UserModel user = friends_model![index]; // UserModel olarak dönüştürme
+            UserModel user =
+                friends_model![index]; // UserModel olarak dönüştürme
 
             return ListTile(
               leading: CircleAvatar(
                 radius: 30,
                 backgroundImage: user.profileImageUrl != null
-                    ? NetworkImage(user.profileImageUrl) // Eğer profil resmi varsa NetworkImage kullan
-                    : AssetImage(Constants.logo_path), // Yoksa AssetImage kullan
+                    ? NetworkImage(user
+                        .profileImageUrl) // Eğer profil resmi varsa NetworkImage kullan
+                    : AssetImage(
+                        Constants.logo_path), // Yoksa AssetImage kullan
               ),
               title: Text(user.displayName ?? ""), // Display adını göster
               subtitle: Text(user.bio ?? ""), // Bio bilgisini göster
@@ -221,7 +217,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           },
         ),
       ];
-
 
   @override
   Widget build(BuildContext context) {
@@ -253,8 +248,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             get_requests = user.receivedFriendRequests;
             posts = user.posts;
 
-            isFriendRequestSent = user.sentFriendRequests!.contains(_auth.currentUser!.uid);
-            isFriendRequestReceived = user.receivedFriendRequests!.contains(_auth.currentUser!.uid);
+            isFriendRequestSent =
+                user.sentFriendRequests!.contains(_auth.currentUser!.uid);
+            isFriendRequestReceived =
+                user.receivedFriendRequests!.contains(_auth.currentUser!.uid);
             isFriend = user.friends!.contains(_auth.currentUser!.uid);
 
             return _buildBody(context, watch, read);
@@ -296,15 +293,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     radius: 50,
                     backgroundImage: profile_pp.isEmpty
                         ? const AssetImage(Constants
-                        .logo_path) // Eğer profile_pp boşsa, varsayılan bir resim göster
+                            .logo_path) // Eğer profile_pp boşsa, varsayılan bir resim göster
                         : NetworkImage(profile_pp),
                     // Eğer profile_pp doluysa, profile_pp'deki resmi göster
                     child: profile_pp.isEmpty
                         ? null // Eğer backgroundImage kullanıyorsanız, child kullanmamalısınız. Bu yüzden null olarak bırakın.
                         : ClipOval(
-                      child: getPhoto(
-                          profile_pp), // Veya getPhoto(profile_pp) kullanarak resmi doldur
-                    ),
+                            child: getPhoto(
+                                profile_pp), // Veya getPhoto(profile_pp) kullanarak resmi doldur
+                          ),
                   ),
                 ),
                 // Ayarlar Butonu
@@ -354,7 +351,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         height: 15,
                         child: CircleAvatar(
                           backgroundColor:
-                          isOnline ? Colors.green : Colors.grey,
+                              isOnline ? Colors.green : Colors.grey,
                         ),
                       ),
                     ),
@@ -378,20 +375,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                 // Arkadaşlık Durumuna Göre Butonu Oluşturma
                 if (!showSettingsButton)
-                  CustomButtonWidgets(funciton: (){
-                    Navigator.pushNamed(context, "send_message_page",arguments: userId);
-                  }, text: Constants.send_message),
+                  CustomButtonWidgets(
+                      funciton: () {
+                        Navigator.pushNamed(context, "send_message_page",
+                            arguments: userId);
+                      },
+                      text: Constants.send_message),
 
-
-                if(!isFriend)
-                  ElevatedButton(
-                    onPressed: () async {
-                      await _handleFriendRequest(watch, context, userId!);
-                      //friend_button_status = await watch.sendFriendsRequest(context, userId!);
-                    },
-                    child: Text(friend_button_status),
-                  ),
-
+                if (!showSettingsButton)
+                  if (!isFriend)
+                    ElevatedButton(
+                      onPressed: () async {
+                        await _handleFriendRequest(watch, context, userId!);
+                        //friend_button_status = await watch.sendFriendsRequest(context, userId!);
+                      },
+                      child: Text(friend_button_status),
+                    ),
 
                 if (isFriend)
                   ElevatedButton(
@@ -432,7 +431,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 // Seçilen sekme içeriğini gösterme
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.4,
-                  child: widgetOptions(context, watch, posts_model, friends_model, getPhoto)
+                  child: widgetOptions(
+                          context, watch, posts_model, friends_model, getPhoto)
                       .elementAt(watch.selectedIndex),
                 ),
               ],
@@ -461,4 +461,3 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 }
-

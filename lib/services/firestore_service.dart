@@ -425,7 +425,6 @@ class FirestoreService {
   }
 
 
-
   Stream<List<Message>> getMessages(
       String senderId,
       String receiverId,
@@ -450,6 +449,44 @@ class FirestoreService {
   }
 
 
+  // Kullanıcının tüm sohbetlerini getiren metod
 
+  Future<List<ChatModel>> getChats(String userId) async {
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
+          .collection(Constants.fb_chats)
+          .where('userIds', arrayContains: userId)
+          .get();
 
+      List<ChatModel> chats = [];
+      for (var doc in snapshot.docs) {
+        List<dynamic> userIds = doc['userIds'];
+        String otherUserId = userIds.firstWhere((id) => id != userId);
+
+        DocumentSnapshot<Map<String, dynamic>> userSnapshot = await _firebaseFirestore
+            .collection(Constants.fb_users)
+            .doc(otherUserId)
+            .get();
+
+        if (userSnapshot.exists) {
+          UserModel userModel = UserModel.fromFirestore(userSnapshot,null);
+
+          ChatModel chatModel = ChatModel(
+            chatId: doc.id,
+            userIds: List<String>.from(doc['userIds']),
+            lastMessage: doc['lastMessage'],
+            lastMessageTimestamp: (doc['lastMessageTimestamp'] as Timestamp).toDate(),
+            user: userModel, // UserModel'i ChatModel'e ekle
+          );
+
+          chats.add(chatModel);
+        }
+      }
+
+      return chats;
+    } catch (e) {
+      print("Sohbetleri getirirken hata oluştu: $e");
+      return [];
+    }
+  }
 }

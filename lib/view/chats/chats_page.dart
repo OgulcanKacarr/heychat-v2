@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,16 +38,18 @@ class _ChatsPageState extends ConsumerState<ChatsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _buildChatList(),
+    return RefreshIndicator(
+      onRefresh: getChats,
+      child: Scaffold(
+        body: _buildChatList(),
+      ),
     );
   }
 
   Widget _buildChatList() {
     //var chats = ref.watch(view_model).getChats(userId);
-
     if (chats == null) {
-      return Center(child: Text('Sohbet bulunamadı.'));
+      return const Center(child: Text(Constants.empty_chat));
     }
 
     return ListView.builder(
@@ -67,16 +70,26 @@ class _ChatsPageState extends ConsumerState<ChatsPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("${user.lastMessage}",style: TextStyle(fontStyle: FontStyle.italic),),
-              Text("${date}",style: TextStyle(fontSize: 10),),
+              Text("${user.lastMessage}",style: TextStyle(fontStyle: FontStyle.italic,
+                fontWeight: user.isRead ? FontWeight.normal : FontWeight.bold, // Yeni mesajlar kalın
+              ),),
+              Text("${Constants.last_chat} ${date}",style: TextStyle(fontSize: 10),),
             ],
           ), // İleride ekleyebilirsiniz
           onTap: () {
             // Sohbete tıklandığında yapılacak işlemler
             // Örneğin sohbet sayfasına yönlendirme yapılabilir
+            // Mesajın okundu olarak işaretlenmesi
+            FirebaseFirestore.instance.collection(Constants.fb_chats).doc(user.chatId).update({
+              'isRead': true,
+            });
             Navigator.pushNamed(context, "send_message_page",arguments: user.user.uid);
 
           },
+          trailing: CircleAvatar(
+            radius: 7,
+            backgroundColor: user.user.isOnline ? Colors.green : Colors.grey,
+          ),
         );
       },
     );

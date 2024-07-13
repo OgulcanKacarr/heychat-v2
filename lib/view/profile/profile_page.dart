@@ -1,12 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heychat_2/model/post_model.dart';
+import 'package:heychat_2/utils/snackbar_util.dart';
+import 'package:heychat_2/view/post_detail/post_detail.dart';
 import 'package:heychat_2/view_model/profil/profile_page_viewmodel.dart';
 import 'package:heychat_2/widgets/custom_button_widgets.dart';
 import 'package:heychat_2/widgets/custom_divider_widgets.dart';
 import 'package:heychat_2/widgets/custom_text_widgets.dart';
+import 'package:photo_view/photo_view.dart';
 
 import '../../model/user_model.dart';
 import '../../utils/constants.dart';
@@ -19,7 +23,7 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   late Future<UserModel?> _futureUser;
   String profile_pp = "";
   String cover_image = "";
@@ -27,6 +31,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   String email = "";
   String bio = "";
   String username = "";
+  String check_post_status = Constants.empty_searchuser_post;
+  String check_friends_status = Constants.empty_searchuser_friend;
   bool isOnline = false;
   String? userId;
   bool showSettingsButton = true;
@@ -50,31 +56,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _futureUser = _getUserInfo();
   }
 
-  Future<void> _handleFriendRequest(
-      var watch, BuildContext context, String target_id) async {
-    if (!isFriendRequestSent && !isFriendRequestReceived) {
-      friend_button_status = await watch.sendFriendsRequest(context, target_id);
-    } else if (isFriendRequestReceived) {
-      friend_button_status = await watch.acceptFriendsRequest(target_id);
-    } else if (isFriendRequestSent) {
-      friend_button_status = await watch.cancelFriendsRequest(target_id);
-    } else if (isFriend) {
-      friend_button_status = await watch.removeFriends(userId!);
-    }
-
-    // FutureBuilder içindeki _futureUser'ı yenilemek için setState kullanımı
-    setState(() {
-      _futureUser = _getUserInfo();
-    });
-  }
-
   Future<UserModel?> _getUserInfo() async {
     UserModel? user;
-
     if (userId != null && userId!.isNotEmpty) {
+      check_post_status = Constants.empty_searchuser_post;
+      check_friends_status = Constants.empty_searchuser_friend;
       showSettingsButton = false;
       user = await ref.read(view_model).getUserInfoFromSearch(context, userId!);
-      posts = user?.posts; // Kullanıcının postlarını alma
+      posts = user?.posts;
       friends = user?.friends;
 
       if (friends != null) {
@@ -95,22 +84,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         isFriend = friends?.contains(userId) ?? false;
 
         if (isFriendRequestReceived) {
-          //Kullanıcıya arkadaşlık isteği gönderilmiş mi?
-          // Eğer gönderilmişse ve hedef kullanıcı bu isteği kabul etmemişse
           friend_button_status = Constants.add_friend;
         } else if (isFriendRequestSent) {
-          //Kullanıcı tarafından hedef kullanıcıya bir arkadaşlık isteği gönderilmiş mi?
-          // Eğer gönderilmişse ve hedef kullanıcı bu isteği henüz kabul etmemişse
           friend_button_status = Constants.cencel_friend;
         } else if (isFriend) {
-          //Kullanıcı ve hedef kullanıcı zaten arkadaş mı? Eğer arkadaşlarsa,
-          // yani kullanıcının arkadaş listesinde hedef kullanıcı varsa, buton metni "Arkadaşsınız" olarak ayarlanır.
           friend_button_status = Constants.remove_friend;
         }
       }
     } else {
+      check_post_status = Constants.empty_currentuser_post;
+      check_friends_status = Constants.empty_currentuser_friend;
       user = await ref.read(view_model).getUserInfo(context);
-      posts = user?.posts; // Kullanıcının postlarını alma
+      posts = user?.posts;
       friends = user?.friends;
 
       if (posts != null) {
@@ -126,97 +111,162 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return user;
   }
 
-  static List<Widget> widgetOptions(
+  List<Widget> widgetOptions(
     BuildContext context,
     ProfilePageViewmodel watch,
     List<PostModel>? posts_model,
     List<UserModel>? friends_model,
-    // Alınan veri tipini eşleştirmek için List<UserModel> olarak değiştirildi
     Widget Function(String) getPhoto,
-  ) =>
-      <Widget>[
-        // Gönderiler için ızgara görünümü
-        GridView.builder(
-          padding: const EdgeInsets.all(8.0),
-          itemCount: posts_model?.length ?? 0, // Gönderi sayısı
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // 3 sütunlu bir ızgara
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-          ),
-          itemBuilder: (context, index) {
-            // Her bir gönderiyi oluşturun
-            PostModel post = posts_model![index];
-
-            return Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
-              ),
-              child: SingleChildScrollView(
+  ) {
+    return [
+// Gönderiler Sekmesi
+      posts_model != null && posts_model!.isNotEmpty
+          ? GridView.builder(
+        padding: const EdgeInsets.all(2.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          mainAxisSpacing: 8.0,
+          crossAxisSpacing: 8.0,
+        ),
+        itemCount: posts_model.length,
+        itemBuilder: (context, index) {
+          return Stack(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  watch.ShowPostDialog(context, posts_model, index);
+                },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Stack(
-                      alignment: Alignment.topRight,
-                      children: [
-                        getPhoto(post.imageUrl),
-                        // getPhoto işlevinin bir Widget döndürdüğünü varsayalım
-                        IconButton(
-                          onPressed: () {
-                            // Silme işlemi burada gerçekleştirilebilir
-                            print('Post silindi');
-                          },
-                          icon: Icon(Icons.delete, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        post.caption,
-                        style: TextStyle(color: Colors.white),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: CachedNetworkImage(
+                        imageUrl: posts_model[index].imageUrl,
+                        fit: BoxFit.cover,
                       ),
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          posts_model[index].caption,
+                          maxLines: 2, // Adjust max lines as needed
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: ()  async {
+                            await watch.removePost(posts_model[index].postId).then((onValue){
+                              setState(() {
+                                posts_model.removeAt(index);
+                                SnackbarUtil.showSnackbar(context, Constants.remove_post);
+                              });
+                            });
+                          },
+                        ),
+                      ],
+                    )
+
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ],
+          );
+        },
+      )
+          : Center(child: Text(check_post_status)),
 
-        // Arkadaş listesi
-        ListView.builder(
-          padding: const EdgeInsets.all(8.0),
-          itemCount: friends_model?.length ?? 0, // Arkadaş sayısı
-          itemBuilder: (context, index) {
-            UserModel user =
-                friends_model![index]; // UserModel olarak dönüştürme
+      // Arkadaşlar Sekmesi
+      friends_model != null && friends_model.isNotEmpty
+          ? ListView.builder(
+              padding: const EdgeInsets.all(8.0),
+              itemCount: friends_model.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: CachedNetworkImageProvider(
+                        friends_model[index].profileImageUrl),
+                  ),
+                  title: Text(friends_model[index].displayName),
+                  subtitle: Text(friends_model[index].username),
+                  onTap: () {
+                    Navigator.pushNamed(context, "profile_page",
+                        arguments: friends_model[index].uid!);
+                  },
+                  onLongPress: () async {
+                    String sessionId = await watch.createNewSession(
+                        friends_model[index].displayName,
+                        friends_model[index].uid);
+                    Navigator.pushNamed(
+                      context,
+                      'watch_together_page',
+                      arguments: {
+                        'friendName': friends_model[index].displayName,
+                        'sessionId': sessionId
+                      },
+                    );
+                  },
+                );
+              },
+            )
+          : Center(child: Text(check_friends_status)),
 
-            return ListTile(
-              leading: CircleAvatar(
-                radius: 30,
-                backgroundImage: user.profileImageUrl != null
-                    ? NetworkImage(user
-                        .profileImageUrl) // Eğer profil resmi varsa NetworkImage kullan
-                    : AssetImage(
-                        Constants.logo_path), // Yoksa AssetImage kullan
-              ),
-              title: Text(user.displayName ?? ""), // Display adını göster
-              subtitle: Text(user.bio ?? ""), // Bio bilgisini göster
-              onTap: () {
-                // Arkadaşa tıklanınca yapılacak işlemler
-                // Örneğin arkadaşın profiline gitmek için navigasyon vb.
+      // Davetler Sekmesi
+      FutureBuilder<List<DocumentSnapshot>>(
+        future: watch.getInvitations(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Davetleri alırken hata oluştu.'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(child: Text('Henüz davetiniz yok.'));
+          } else {
+            List<DocumentSnapshot> invitations = snapshot.data!;
+            return ListView.builder(
+              itemCount: invitations.length,
+              itemBuilder: (context, index) {
+                var invitation =
+                    invitations[index].data() as Map<String, dynamic>;
+                String friendName = invitation['friendName'];
+                String status = invitation['status'];
+
+                return ListTile(
+                  title: Text('Davet eden: $friendName'),
+                  subtitle: Text('Durum: $status'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.check),
+                        onPressed: () {
+                          watch.acceptInvitation(
+                              context, invitations[index].id);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () {
+                          watch.rejectInvitation(invitations[index].id);
+                          setState(() {
+                            _futureUser = _getUserInfo();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                );
               },
             );
-          },
-        ),
-      ];
+          }
+        },
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +283,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             print("Hata: ${snapshot.error}");
             return Center(child: Text('Hata: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data == null) {
-            return const Center(child: Text('Kullanıcı verisi bulunamadı.'));
+            return const Center(child: Text(Constants.user_not_found));
           } else {
             UserModel user = snapshot.data!;
             display_name = user.displayName;
@@ -278,30 +328,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.4,
-                    child: cover_image.isEmpty
-                        ? const Center(child: Text(Constants.empty_cover_photo))
-                        : CachedNetworkImage(imageUrl: cover_image),
+                  child: GestureDetector(
+                    onTap: () {
+                      watch.showCoverPhotoDialog(context, cover_image);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.4,
+                      child: cover_image.isEmpty
+                          ? const Center(
+                              child: Text(Constants.empty_cover_photo))
+                          : CachedNetworkImage(imageUrl: cover_image),
+                    ),
                   ),
                 ),
                 // Profil Fotoğrafı
                 Positioned(
                   bottom: 0,
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: profile_pp.isEmpty
-                        ? const AssetImage(Constants
-                            .logo_path) // Eğer profile_pp boşsa, varsayılan bir resim göster
-                        : NetworkImage(profile_pp),
-                    // Eğer profile_pp doluysa, profile_pp'deki resmi göster
-                    child: profile_pp.isEmpty
-                        ? null // Eğer backgroundImage kullanıyorsanız, child kullanmamalısınız. Bu yüzden null olarak bırakın.
-                        : ClipOval(
-                            child: getPhoto(
-                                profile_pp), // Veya getPhoto(profile_pp) kullanarak resmi doldur
-                          ),
+                  child: GestureDetector(
+                    onTap: () {
+                      watch.showProfilePhotoDialog(context, profile_pp);
+                    },
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: profile_pp.isEmpty
+                          ? const AssetImage(Constants.logo_path)
+                          : NetworkImage(profile_pp),
+                      child: profile_pp.isEmpty
+                          ? null
+                          : ClipOval(
+                              child: watch.getPhoto(profile_pp),
+                            ),
+                    ),
                   ),
                 ),
                 // Ayarlar Butonu
@@ -386,8 +444,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   if (!isFriend)
                     ElevatedButton(
                       onPressed: () async {
-                        await _handleFriendRequest(watch, context, userId!);
-                        //friend_button_status = await watch.sendFriendsRequest(context, userId!);
+                        await watch.handleFriendRequest(context, userId!);
                       },
                       child: Text(friend_button_status),
                     ),
@@ -395,8 +452,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 if (isFriend)
                   ElevatedButton(
                     onPressed: () async {
-                      // Arkadaşlıktan çıkar işlemi yapılabilir
-                      // Örnek olarak:
                       await watch.removeFriends(userId!);
                       setState(() {
                         _futureUser = _getUserInfo();
@@ -424,6 +479,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           watch.onItemTapped(1);
                         },
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.watch),
+                        onPressed: () {
+                          watch.onItemTapped(2);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -431,8 +492,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 // Seçilen sekme içeriğini gösterme
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.4,
-                  child: widgetOptions(
-                          context, watch, posts_model, friends_model, getPhoto)
+                  child: widgetOptions(context, watch, posts_model,
+                          friends_model, watch.getPhoto)
                       .elementAt(watch.selectedIndex),
                 ),
               ],
@@ -443,21 +504,5 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Widget getPhoto(String image_url) {
-    return CachedNetworkImage(
-      alignment: Alignment.center,
-      imageUrl: image_url,
-      fit: BoxFit.cover,
-      progressIndicatorBuilder: (context, url, downloadProgress) {
-        if (downloadProgress.totalSize != null) {
-          final percent = (downloadProgress.progress! * 100).toStringAsFixed(0);
-          return Center(
-            child: Text("$percent% tamamlandı"),
-          );
-        } else {
-          return CircularProgressIndicator();
-        }
-      },
-    );
-  }
+
 }

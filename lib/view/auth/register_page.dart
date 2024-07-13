@@ -115,7 +115,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   const SizedBox(height: 5,),
                   Padding(padding:const EdgeInsets.only(bottom: 5),child: Center(child: TextButton(
                     onPressed: ()  {
-                     watch.goLoginPage(context);
+                      watch.goLoginPage(context);
                     },
                     child: const Text(Constants.title_login,style: TextStyle(fontSize: 10, color: Colors.white),),
                   ))),

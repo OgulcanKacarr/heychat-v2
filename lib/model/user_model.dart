@@ -13,6 +13,7 @@ class UserModel {
   List<String>? sentFriendRequests;
   List<String>? receivedFriendRequests;
   List<String>? posts;
+  String? token;
 
   UserModel({
     required this.uid,
@@ -27,6 +28,7 @@ class UserModel {
     this.sentFriendRequests = const [],
     this.receivedFriendRequests = const [],
     this.posts = const [],
+    this.token = "",
   });
 
   factory UserModel.fromFirestore(
@@ -51,6 +53,8 @@ class UserModel {
           ? List.from(data?['receivedFriendRequests'])
           : null,
       posts: data?['posts'] is List ? List.from(data?['posts']) : null,
+      token: data?['token'] ?? '',
+
     );
   }
 
@@ -68,6 +72,7 @@ class UserModel {
       'sentFriendRequests': sentFriendRequests,
       'receivedFriendRequests': receivedFriendRequests,
       'posts': posts,
+      'token': token,
     };
   }
 

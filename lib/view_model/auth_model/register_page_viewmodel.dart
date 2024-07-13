@@ -38,8 +38,8 @@ class RegisterPageViewmodel extends ChangeNotifier{
     nameAndSurname = nameAndSurname.trim();
 
     if (nameAndSurname.isEmpty) {
-      SnackbarUtil.showSnackbar(context, Constants.name_and_surname_not_empty);
       ProgressDialog.hideProgressDialog(context);
+      SnackbarUtil.showSnackbar(context, Constants.name_and_surname_not_empty);
     } else if (username.isEmpty) {
       ProgressDialog.hideProgressDialog(context);
       SnackbarUtil.showSnackbar(context, Constants.username_not_empty);
@@ -60,9 +60,13 @@ class RegisterPageViewmodel extends ChangeNotifier{
       SnackbarUtil.showSnackbar(context, Constants.not_match_password);
     } else {
       //Kullanıcı oluştur ve bilgileri firestore'a ekle
-      _authService.createWithEmailAndPassword(context, email, password, username, nameAndSurname).whenComplete(() {
-        ProgressDialog.hideProgressDialog(context);
-        Navigator.pushReplacementNamed(context, "home_page");
+      _authService.createWithEmailAndPassword(context, email, password, username, nameAndSurname).then((value){
+        if(value!.uid != null){
+          ProgressDialog.hideProgressDialog(context);
+          Navigator.pushReplacementNamed(context, "home_page");
+        }else{
+          ProgressDialog.hideProgressDialog(context);
+        }
       });
     }
     notifyListeners();

@@ -1,17 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' as messaging;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:heychat_2/model/message_model.dart';
 import 'package:heychat_2/model/post_model.dart';
 import 'package:heychat_2/model/user_model.dart';
 import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/utils/snackbar_util.dart';
-import 'package:rxdart/rxdart.dart';
-
 import '../model/chat_model.dart';
+import 'package:http/http.dart' as http;
 
 class FirestoreService {
   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
@@ -110,6 +110,8 @@ class FirestoreService {
     List<String> likes = [];
     List<String> comments = [];
 
+    DateTime date = DateTime.now();
+    var timestamp = Timestamp.fromDate(date);
 
     PostModel post =
     PostModel(postId: postId,
@@ -118,7 +120,7 @@ class FirestoreService {
         likes: likes,
         comments: comments,
         caption: caption,
-        createdAt: Timestamp.fromDate(DateTime.now()));
+        createdAt:timestamp);
 
     //Postları fb ekle
     _firebaseFirestore
@@ -132,15 +134,28 @@ class FirestoreService {
     });
   }
 
+// Post silme metodu
+  Future<void> removePost(String postId) async {
+    try {
+      // Firestore'dan ilgili postu sil
+      await _firebaseFirestore
+          .collection(Constants.fb_post)
+          .doc(postId)
+          .delete();
 
-/*
-  //Postları çek
-  Future<List<PostModel>> getPosts() async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore.collection(Constants.fb_post).get();
-    return snapshot.docs.map((doc) => PostModel.fromFirestore(doc)).toList();
+      // Kullanıcının postlar listesinden silinen postu kaldır
+      String userId = _auth.currentUser!.uid;
+      await _firebaseFirestore
+          .collection(Constants.fb_users)
+          .doc(userId)
+          .update({
+        'posts': FieldValue.arrayRemove([postId])
+      });
+    } catch (e) {
+      print("Error deleting post: $e");
+    }
   }
 
- */
 
   //Postları çek
   Future<List<String>> getMyPostIds(String userId) async {
@@ -148,6 +163,7 @@ class FirestoreService {
       QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
           .collection(Constants.fb_post)
           .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
           .get();
 
 
@@ -175,6 +191,7 @@ class FirestoreService {
         QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
             .collection(Constants.fb_post)
             .where('userId', isEqualTo: friendId)
+            .orderBy('createdAt', descending: true)
             .get();
         for (var doc in snapshot.docs) {
           friendsPosts.add(PostModel.fromFirestore(doc));
@@ -227,6 +244,7 @@ class FirestoreService {
   }
 
 
+
   //arkadaşları çek
   Future<List<UserModel>> getFriendsByFriendsIds(
       List<String> friendsIds) async {
@@ -277,9 +295,6 @@ class FirestoreService {
     } catch (e) {
       print(e);
     }
-
-    // Debug çıktısı
-    print("Friend request sent from $currentUserUid to $recipientUid");
 
     return Constants.send_friend_failed;
   }
@@ -365,19 +380,65 @@ class FirestoreService {
   }
 
 
+  //arkadaş isteklerini getir
+  Future<List<Map<String, String>>> getFriendsRequests() async {
+    String currentUserUid = _auth.currentUser?.uid ?? '';
+    try {
+      DocumentSnapshot userDoc = await _firebaseFirestore
+          .collection(Constants.fb_users)
+          .doc(currentUserUid)
+          .get();
+      List<String> friendRequests = List<String>.from(userDoc['receivedFriendRequests']);
+
+      // Her arkadaş isteği için kullanıcı bilgilerini al
+      List<Map<String, String>> usersData = [];
+      for (String uid in friendRequests) {
+        DocumentSnapshot userData = await _firebaseFirestore.collection(Constants.fb_users).doc(uid).get();
+        usersData.add({
+          'uid': userData['uid'],
+          'displayName': userData['displayName'],
+          'username': userData['username'],
+          'profileImageUrl': userData['profileImageUrl'] ?? ''
+        });
+      }
+      return usersData;
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
 
 
+  Future<String?> getReceiverToken(String receiverId) async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> snapshot =
+      await _firebaseFirestore.collection(Constants.fb_users).doc(receiverId).get();
+      Map<String, dynamic>? userData = snapshot.data();
 
-
-
+      // userData varsa ve 'token' alanı String ise doğrudan döndür
+      if (userData != null && userData['token'] is String) {
+        String token = userData['token']; // Token'ı al
+        print("hedefin tokeni: $token"); // Token'ı yazdır (Opsiyonel)
+        return token; // Token'ı döndür
+      } else {
+        return null;
+      }
+    } catch (e) {
+      print("Error getting receiver token: $e");
+      throw e;
+    }
+  }
 
 
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
     required String content,
+    required String receiverToken, // Alıcının FCM token'ını buradan alın
+
   }) async {
     try {
+
       // Chat ID oluşturmak için katılımcıların UID'lerini sıralı bir şekilde birleştiriyoruz.
       List<String> userIds = [senderId, receiverId];
       userIds.sort(); // UID'leri sıralıyoruz ki chatId her iki kullanıcı için aynı olsun.
@@ -395,6 +456,8 @@ class FirestoreService {
         'receiverId': receiverId,
         'content': content,
         'timestamp': timestamp,
+        'isRead': false,
+        'receiverToken': receiverToken,
       });
 
       // Son mesajı güncellemek için gerekli verileri hazırlıyoruz.
@@ -410,17 +473,35 @@ class FirestoreService {
           'userIds': userIds,
           'lastMessage': lastMessage,
           'lastMessageTimestamp': lastMessageTimestamp,
+          'isRead': false, // Yeni mesaj okunmadı olarak işaretleniyor
         });
       } else {
         // Eğer chat belgesi varsa, son mesajı ve zaman damgasını güncelliyoruz.
         await FirebaseFirestore.instance.collection(Constants.fb_chats).doc(chatId).update({
           'lastMessage': lastMessage,
           'lastMessageTimestamp': lastMessageTimestamp,
+          'isRead': false, // Yeni mesaj okunmadı olarak işaretleniyor
         });
+
+
+          // Mesaj içeriği (content) bildirim metni olarak kullanılabilir
+          String messageBody = content;
+          // Bildirim gönderme işlemi
+          await sendNotification(receiverToken, 'Yeni Mesaj', messageBody);
+
+
       }
     } catch (e) {
       print('Hata oluştu: $e');
       // Hata durumunda uygun şekilde işleme alınabilir.
+    }
+  }
+
+  Future<void> sendNotification(String receiverToken, String title, String messageBody) async {
+    try {
+
+    } catch (e) {
+      print('Error sending notification: $e');
     }
   }
 
@@ -456,6 +537,7 @@ class FirestoreService {
       QuerySnapshot<Map<String, dynamic>> snapshot = await _firebaseFirestore
           .collection(Constants.fb_chats)
           .where('userIds', arrayContains: userId)
+          .orderBy('lastMessageTimestamp', descending: true)
           .get();
 
       List<ChatModel> chats = [];
@@ -476,7 +558,8 @@ class FirestoreService {
             userIds: List<String>.from(doc['userIds']),
             lastMessage: doc['lastMessage'],
             lastMessageTimestamp: (doc['lastMessageTimestamp'] as Timestamp).toDate(),
-            user: userModel, // UserModel'i ChatModel'e ekle
+            isRead: doc['isRead'], // UserModel'i ChatModel'e ekle
+            user: userModel,
           );
 
           chats.add(chatModel);
@@ -489,4 +572,6 @@ class FirestoreService {
       return [];
     }
   }
+
+
 }

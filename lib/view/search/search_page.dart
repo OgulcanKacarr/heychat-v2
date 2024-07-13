@@ -43,7 +43,6 @@ class _FeedPageState extends ConsumerState<SearchPage> {
             keyboard_type: TextInputType.text,
             onChanged: (value) async {
               if(value.isNotEmpty)  {
-                print("test");
                 await watch.searchUserWithUsername(context,value).then((user){
                   if (user != null) {
                     // Kullanıcı bulundu ise ListTile içinde göster

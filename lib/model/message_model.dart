@@ -7,6 +7,9 @@ class Message {
   final String content;
   final DateTime timestamp;
   DateTime now = DateTime.now();
+  final bool isRead;
+  final String receiverToken; // Alıcının FCM token'ı
+
 
   Message({
     required this.id,
@@ -14,6 +17,9 @@ class Message {
     required this.receiverId,
     required this.content,
     required this.timestamp,
+    required this.isRead,
+    required this.receiverToken,
+
   });
 
   factory Message.fromFirestore(DocumentSnapshot doc) {
@@ -24,6 +30,9 @@ class Message {
       receiverId: data['receiverId'],
       content: data['content'],
       timestamp: (data['timestamp'] as Timestamp).toDate(),
+      isRead: data['isRead'] ?? false,
+      receiverToken: data['token'] ?? '', // Eğer alan yoksa varsayılan değer
+
     );
   }
 }

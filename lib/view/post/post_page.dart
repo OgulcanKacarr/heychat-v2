@@ -6,7 +6,6 @@ import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/utils/snackbar_util.dart';
 import 'package:heychat_2/view_model/post/post_page_viewmodel.dart';
 
-
 final view_model = ChangeNotifierProvider((ref) => PostPageViewmodel());
 
 class PostPage extends ConsumerStatefulWidget {
@@ -34,12 +33,10 @@ class _PostPageState extends ConsumerState<PostPage> {
             onPressed: () async {
               try {
                 if (selectedImage != null) {
-                  await read.addPost(context,descriptionController.text).whenComplete(
-                          (){
-                            SnackbarUtil.showSnackbar(context, Constants.add_post_succes);
-                        Navigator.pushNamed(context, "home_page");
-                      }
-                  );
+                  await read.addPost(context, descriptionController.text).whenComplete(() {
+                    SnackbarUtil.showSnackbar(context, Constants.add_post_succes);
+                    Navigator.pushNamed(context, "home_page");
+                  });
 
                   selectedImage = null;
                 } else {
@@ -70,20 +67,28 @@ class _PostPageState extends ConsumerState<PostPage> {
                     });
                   },
                   child: Container(
-                    height: screenWidth / 2, // Half of the screen width
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: selectedImage != null
-                        ? Image.file(
-                      selectedImage!,
-                      fit: BoxFit.cover,
-                    )
-                        : Icon(
-                      Icons.camera_alt,
-                      size: 64.0,
-                      color: Colors.grey[600],
+                    width: screenWidth,
+                    child: AspectRatio(
+                      aspectRatio: 1, // Square aspect ratio (1:1)
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                        child: selectedImage != null
+                            ? ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Image.file(
+                            selectedImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : Icon(
+                          Icons.camera_alt,
+                          size: 64.0,
+                          color: Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ),
                 ),

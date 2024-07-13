@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:heychat_2/utils/constants.dart';
 import 'package:heychat_2/widgets/custom_cardview_widgets.dart';
 import 'package:heychat_2/widgets/custom_text_widgets.dart';
+import 'package:photo_view/photo_view.dart';
 
 import '../../model/post_model.dart';
 import '../../model/user_model.dart';
@@ -30,15 +31,17 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
   Future<List<PostWithUser>> _fetchPostsWithUsers() async {
     try {
-
-
       // Kendi postlarınızı alın
-      List<String> myPostIds = await _firestoreService.getMyPostIds(_auth.currentUser!.uid);
-      List<PostModel> myPosts = await _firestoreService.getPostsByPostIds(myPostIds);
+      List<String> myPostIds =
+          await _firestoreService.getMyPostIds(_auth.currentUser!.uid);
+      List<PostModel> myPosts =
+          await _firestoreService.getPostsByPostIds(myPostIds);
 
       // Arkadaşlarınızın postlarını almak için arkadaş listesini kullanın
-      List<String> friendsIds = await _firestoreService.getFriendIds(_auth.currentUser!.uid);
-      List<PostModel> friendsPosts = await _firestoreService.getFriendsPosts(friendsIds);
+      List<String> friendsIds =
+          await _firestoreService.getFriendIds(_auth.currentUser!.uid);
+      List<PostModel> friendsPosts =
+          await _firestoreService.getFriendsPosts(friendsIds);
 
       // Kendi postlarınızı ve arkadaşlarınızın postlarını birleştirin
       List<PostModel> allPosts = [...myPosts, ...friendsPosts];
@@ -74,7 +77,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
         return SingleChildScrollView(
           child: Column(
-            children: postsWithUsers.map((postWithUser) => buildPostCard(postWithUser)).toList(),
+            children: postsWithUsers
+                .map((postWithUser) => buildPostCard(postWithUser))
+                .toList(),
           ),
         );
       },
@@ -85,91 +90,141 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     PostModel post = postWithUser.post;
     UserModel user = postWithUser.user;
 
-    return CustomCardviewWidgets(
-      container: Container(
-        padding: EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 5,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(10),
+            child: Row(
               children: [
                 CircleAvatar(
-                  radius: 30,
+                  radius: 20,
                   backgroundImage: user.profileImageUrl.isNotEmpty
                       ? NetworkImage(user.profileImageUrl)
-                      : AssetImage(Constants.logo_path) as ImageProvider, // Varsayılan resim
+                      : AssetImage('assets/default_profile.png')
+                          as ImageProvider,
                 ),
-                const SizedBox(width: 5),
-                CustomTextWidgets(
-                  text: user.displayName,
-                  color: Colors.white,
+                const SizedBox(width: 10),
+                Text(
+                  user.displayName,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
-            const SizedBox(height: 5),
-            Container(
-              height: MediaQuery.of(context).size.height / 2,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                image: DecorationImage(
-                  image: CachedNetworkImageProvider(post.imageUrl),
-                  fit: BoxFit.cover,
+          ),
+
+          //post
+          Container(
+            height: MediaQuery.of(context).size.height / 2,
+            width: MediaQuery.of(context).size.width,
+            child: PhotoView(
+              imageProvider: CachedNetworkImageProvider(post.imageUrl),
+              minScale: PhotoViewComputedScale.contained * 0.8,
+              maxScale: PhotoViewComputedScale.covered * 2,
+              initialScale: PhotoViewComputedScale.contained,
+              loadingBuilder: (context, event) {
+                if (event == null) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return Center(
+                  child: CircularProgressIndicator(
+                    value:
+                        event.cumulativeBytesLoaded / event.expectedTotalBytes!,
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) =>
+                  const Center(child: Icon(Icons.error)),
+            ),
+          ),
+
+          //butonlar
+          Padding(
+            padding: EdgeInsets.all(10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        // Like button logic
+                      },
+                      icon: Icon(Icons.favorite_border),
+                    ),
+                    const SizedBox(width: 5),
+                    IconButton(
+                      onPressed: () {
+                        // Comment button logic
+                      },
+                      icon: Icon(Icons.comment_rounded),
+                    ),
+                  ],
                 ),
-              ),
+                IconButton(
+                  onPressed: () {
+                    // Share button logic
+                  },
+                  icon: Icon(Icons.share),
+                ),
+              ],
             ),
-            ListTile(
-              leading: IconButton(
-                onPressed: () {
-                  // Beğenme işlemi için gerekli kodu buraya ekleyin
-                },
-                icon: Icon(Icons.favorite_border),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  // Yorum yapma işlemi için gerekli kodu buraya ekleyin
-                },
-                icon: Icon(Icons.comment_rounded),
-              ),
-              title: Text(post.caption),
+          ),
+
+          //açıklama
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              "${user.username}: ${post.caption}",
+              style: TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 10),
-            // Yorumlar bölümü
-            Column(
+          ),
+          const SizedBox(height: 10),
+
+          //yorumlar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: post.comments.map((comment) {
-                // Her yorum için ListTile oluştur
                 return ListTile(
+                  contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     backgroundColor: Colors.blue,
-                    child: Text(comment.split(':')[0][0]), // Yorum yapanın ilk harfi
+                    child: Text(comment.split(':')[0][0]),
                   ),
                   title: Text(comment),
                 );
               }).toList(),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+        ],
       ),
     );
   }
+}
 
-  Widget getPhoto(String imageUrl) {
-    return CachedNetworkImage(
-      alignment: Alignment.center,
-      imageUrl: imageUrl,
-      fit: BoxFit.cover,
-      progressIndicatorBuilder: (context, url, downloadProgress) {
-        if (downloadProgress.totalSize != null) {
-          final percent = (downloadProgress.progress! * 100).toStringAsFixed(0);
-          return Center(
-            child: Text("$percent% done loading"),
-          );
-        } else {
-          return const CircularProgressIndicator();
-        }
-      },
-    );
-  }
+Widget getPhoto(String imageUrl) {
+  return CachedNetworkImage(
+    alignment: Alignment.center,
+    imageUrl: imageUrl,
+    fit: BoxFit.cover,
+    progressIndicatorBuilder: (context, url, downloadProgress) {
+      if (downloadProgress.totalSize != null) {
+        final percent = (downloadProgress.progress! * 100).toStringAsFixed(0);
+        return Center(
+          child: Text("$percent% done loading"),
+        );
+      } else {
+        return const CircularProgressIndicator();
+      }
+    },
+  );
 }
 
 class PostWithUser {

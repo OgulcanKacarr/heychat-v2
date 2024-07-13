@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class Constants {
   static const String appName = "Hey Chat";
   static const double padding = 16.0;
@@ -51,7 +53,16 @@ class Constants {
   static const String add_caption = "Açıklama ekle...";
   static const String send_message = "Mesaj gönder";
   static const String enter_message = "Mesajınızı girin..";
+  static const String empty_chat = "Henüz sohbet etmediniz..";
+  static const String last_chat = "Son konuşma: ";
+  static const String be_register = "Kayıt olmayı deneyebilirsin";
+  static const String empty_currentuser_post = "Henüz paylaşım yapmadın";
+  static const String empty_currentuser_friend = "Henüz arkadaşın yok";
+  static const String get_friends_request = "İstekler";
+  static const String remove_post = "Post silindi";
 
+  static const String empty_searchuser_post = "Gönderi yok";
+  static const String empty_searchuser_friend = "Arkadaşları yok";
 
 
   static const String fb_users = "Users";
@@ -64,4 +75,9 @@ class Constants {
 
 
   static const String logo_path = "assets/images/logo.png";
+
+  static double screenWith(BuildContext context){return MediaQuery.of(context).size.width;}
+  static double screenHeight(BuildContext context){return MediaQuery.of(context).size.height;}
+
+
 }

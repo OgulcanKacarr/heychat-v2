@@ -6,14 +6,16 @@ class ChatModel {
   final List<String> userIds;
   final String lastMessage;
   final DateTime lastMessageTimestamp;
-  final UserModel user; // UserModel'i ekledik
+  final UserModel user;
+  final bool isRead; // Yeni alan
 
   ChatModel({
     required this.chatId,
     required this.userIds,
     required this.lastMessage,
     required this.lastMessageTimestamp,
-    required this.user, // UserModel'i required olarak ekledik
+    required this.user,
+    required this.isRead, // Yeni alan
   });
 
   factory ChatModel.fromMap(Map<String, dynamic> map, String chatId, UserModel user) {
@@ -22,7 +24,8 @@ class ChatModel {
       userIds: List<String>.from(map['userIds'] ?? []),
       lastMessage: map['lastMessage'] ?? '',
       lastMessageTimestamp: (map['lastMessageTimestamp'] as Timestamp).toDate(),
-      user: user, // user alanını fabrik metodu içinde atadık
+      user: user,
+      isRead: map['isRead'] ?? false, // Yeni alan
     );
   }
 }

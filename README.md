@@ -4,13 +4,9 @@ A new chat app but funny
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+![k1](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/1.jpg)
+![k2](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/2.jpg)
+![k3](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/3.jpg)
+![k4](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/4.jpg)
+![k5](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/5.jpg)
+![k6](https://github.com/OgulcanKacarr/heychat-v2/blob/main/HeyChat-v2-Images/6.jpg)
